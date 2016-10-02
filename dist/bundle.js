@@ -223,15 +223,14 @@
 				source.buffer = buffer;
 				source.connect(ctx.audio.context.destination);
 				source.start(0);
-				console.log('played sound');
 			};
 
 			if (this.playedDummySound) {
-				this.grid.canvas.removeEventListener('mousedown', dummySound);
+				this.grid.sounds.container.removeEventListener('mousedown', dummySound);
 				return;
 			}
 
-			this.grid.canvas.addEventListener('mousedown', dummySound);
+			this.grid.sounds.container.addEventListener('mousedown', dummySound);
 			this.playedDummySound = true;
 		}
 
