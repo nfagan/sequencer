@@ -2,8 +2,8 @@ import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
 const interact = require('interact.js')
 
-function Grid() {
-	this.dimensions = { cellSize: 50, rows: 8, cols: 6 }
+function Grid(dimensions) {
+	this.dimensions = dimensions
 
 	this.canvas = ( () => {
 		let canvas = document.createElement('canvas')
@@ -171,6 +171,10 @@ Grid.prototype = {
 		let cells = this.getNonEmptyCells()
 		if (cells.length === 0) return;
 		cells.map( (cell) => this.sounds.setPosition(cell.containedSound,cell))
+	},
+
+	checkIfEmpty: function(index) {
+		return this.cells[index].isEmpty
 	},
 
 	reposition: function() { this.positionCanvas(); this.setCellBounds(); this.setContainedElementPositions(); },

@@ -85,11 +85,16 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var interact = __webpack_require__(5);
+
 	function Sequencer() {
-		this.grid = new _grid2.default();
+		this.grid = new _grid2.default({ cellSize: 50, rows: 8, cols: 6 });
 		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
 		this.direction = 'col';
 		this.speed = 500;
+		this.minSpeed = 100;
+		this.maxSpeed = 800;
+		this.speedStep = 50;
 		this.loopId = null;
 		this.iteration = 0;
 		this.isPlaying = false;
@@ -112,7 +117,7 @@
 
 				_this.iteration++;
 
-				if (_this.iteration > _this.grid.dimensions[_this.direction + 's']) _this.iteration = 0;
+				if (_this.iteration > _this.grid.dimensions[_this.direction + 's'] - 1) _this.iteration = 0;
 
 				if (cells.length > 0) {
 					for (var i = 0; i < cells.length; i++) {
@@ -127,6 +132,31 @@
 			this.isPlaying = false;
 		},
 
+		changeSpeed: function changeSpeed(make) {
+			var keepPlaying = false,
+			    newSpeed = 0;
+
+			if (this.isPlaying) {
+				this.pause();
+				keepPlaying = true;
+			}
+
+			if (make === 'faster') {
+				newSpeed = this.speed - this.speedStep;
+			} else if (make === 'slower') {
+				newSpeed = this.speed + this.speedStep;
+			} else {
+				newSpeed = this.minSpeed;
+			}
+
+			if (newSpeed > this.maxSpeed) newSpeed = this.maxSpeed;
+			if (newSpeed < this.minSpeed) newSpeed = this.minSpeed;
+
+			this.speed = newSpeed;
+
+			if (keepPlaying) this.loop();
+		},
+
 		toggleDirection: function toggleDirection() {
 			this.pause();
 			if (this.direction === 'col') {
@@ -138,32 +168,64 @@
 		},
 
 		createControls: function createControls() {
-			var container = document.createElement('div'),
-			    controlsContainer = document.createElement('div'),
-			    controlIds = ['play', 'direction', 'private'],
-			    controlText = ['&#9995;', '&#128080;', '&#128075;'];
 
-			for (var i = 0; i < controlIds.length; i++) {
-				var el = document.createElement('p');
-				el.innerHTML = controlText[i];
-				el.id = controlIds[i];
-				controlsContainer.appendChild(el);
+			var directionAndPublicControls = {
+				containerClassName: 'container',
+				controlsContainerClassName: 'controls',
+				controlIds: ['play', 'direction', 'private'],
+				controlText: ['&#9995;', '&#128080;', '&#128075;']
+			};
+
+			var bpmControls = {
+				containerClassName: 'bpmContainer',
+				controlsContainerClassName: 'controls',
+				controlIds: ['minus', 'plus'],
+				controlText: ['&#9778;', '&#9781;']
+			};
+
+			var controlCreator = function controlCreator(props) {
+				var container = document.createElement('div'),
+				    controlsContainer = document.createElement('div'),
+				    controlIds = props.controlIds,
+				    controlText = props.controlText;
+
+				var elementGenerator = function elementGenerator(ids, text, container) {
+					for (var i = 0; i < ids.length; i++) {
+						var el = document.createElement('p');
+						el.innerHTML = text[i];
+						el.id = ids[i];
+						container.appendChild(el);
+					}
+					return container;
+				};
+
+				controlsContainer = elementGenerator(controlIds, controlText, controlsContainer);
+				container.className = props.containerClassName;
+				controlsContainer.className = props.controlsContainerClassName;
+
+				container.appendChild(controlsContainer);
+				document.body.appendChild(container);
+			};
+
+			//	actually create the elements
+
+			var allControls = [directionAndPublicControls, bpmControls];
+
+			for (var i = 0; i < allControls.length; i++) {
+				controlCreator(allControls[i]);
 			}
-
-			container.className = 'container';
-			controlsContainer.className = 'controls';
-
-			container.appendChild(controlsContainer);
-			document.body.appendChild(container);
 		},
 
 		positionControls: function positionControls() {
 			var controls = document.querySelectorAll('p'),
 			    container = document.querySelector('.container'),
+			    bpmContainer = document.querySelector('.bpmContainer'),
 			    height = parseFloat(window.getComputedStyle(controls[0]).getPropertyValue('height')),
-			    gridTop = this.grid.position.top;
+			    gridTop = this.grid.position.top,
+			    gridHeight = this.grid.canvas.height;
 
 			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(gridTop / 2 - height / 2) });
+			_helpers2.default.setStyle(bpmContainer, { top: _helpers2.default.toPixels(gridTop + gridHeight + height / 2) });
 		},
 
 		handlePlayButton: function handlePlayButton() {
@@ -190,12 +252,32 @@
 			});
 		},
 
-		handleResize: function handleResize() {
+		handleBPMIncreaseButton: function handleBPMIncreaseButton() {
 			var _this4 = this;
 
+			var button = document.querySelector('#plus');
+			button.addEventListener('click', function () {
+				_this4.changeSpeed('faster');
+				_this4.addSelectedClass(button);
+			});
+		},
+
+		handlBPMDecreaseButton: function handlBPMDecreaseButton() {
+			var _this5 = this;
+
+			var button = document.querySelector('#minus');
+			button.addEventListener('click', function () {
+				_this5.changeSpeed('slower');
+				_this5.addSelectedClass(button);
+			});
+		},
+
+		handleResize: function handleResize() {
+			var _this6 = this;
+
 			window.addEventListener('resize', function () {
-				_this4.grid.reposition();
-				_this4.positionControls();
+				_this6.grid.reposition();
+				_this6.positionControls();
 			});
 		},
 
@@ -203,6 +285,8 @@
 			this.handleResize();
 			this.handlePlayButton();
 			this.handleDirectionButton();
+			this.handleBPMIncreaseButton();
+			this.handlBPMDecreaseButton();
 		},
 
 		addSelectedClass: function addSelectedClass(el) {
@@ -214,6 +298,10 @@
 		},
 
 		playDummySound: function playDummySound() {
+
+			// TODO: change the target of the event listener to something
+			// that ios recognizes as a valid trigger
+
 			var ctx = this;
 
 			var dummySound = function dummySound() {
@@ -260,10 +348,10 @@
 
 	var interact = __webpack_require__(5);
 
-	function Grid() {
+	function Grid(dimensions) {
 		var _this = this;
 
-		this.dimensions = { cellSize: 50, rows: 8, cols: 6 };
+		this.dimensions = dimensions;
 
 		this.canvas = function () {
 			var canvas = document.createElement('canvas');
@@ -446,6 +534,10 @@
 			cells.map(function (cell) {
 				return _this4.sounds.setPosition(cell.containedSound, cell);
 			});
+		},
+
+		checkIfEmpty: function checkIfEmpty(index) {
+			return this.cells[index].isEmpty;
 		},
 
 		reposition: function reposition() {

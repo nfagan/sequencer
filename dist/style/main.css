@@ -5,7 +5,7 @@ html, body {
 .soundbite {
   border-radius: 50%; }
 
-.container {
+.container, .bpmContainer {
   z-index: 0;
   margin: 0;
   padding: 0;
@@ -22,7 +22,7 @@ html, body {
   float: left;
   transition: transform .2s;
   cursor: pointer; }
-  .controls p#play, .controls p#direction {
+  .controls p#play, .controls p#direction, .controls p#minus {
     padding-right: 1em; }
   .controls p:hover {
     transform: scale(1.1, 1.1); }
