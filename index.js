@@ -4,6 +4,7 @@ var app = express()
 var http = require('http').Server(app);
 
 app.use(express.static('dist/'));
+app.use(express.static('dist/style/'));
 
 app.get('/sequencer/sounds/:soundName',function(req, res) {
 	var filename = 'dist/static/aud/' + req.params.soundName;

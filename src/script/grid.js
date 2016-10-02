@@ -1,5 +1,6 @@
 import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
+const interact = require('interact.js')
 
 function Grid() {
 	this.dimensions = { cellSize: 50, rows: 8, cols: 6 }
@@ -173,14 +174,34 @@ Grid.prototype = {
 
 	reposition: function() { this.positionCanvas(); this.setCellBounds(); this.setContainedElementPositions(); },
 
+	// configure handling of element pickup and release from grid
+
 	handleElements: function() {
-		this.sounds.container.addEventListener('mousedown',(e) => { 
-			console.log('touched down'); this.undock(e.target); this.sounds.makeDraggable(e) 
-		})
-		this.sounds.container.addEventListener('mouseup',(e) => { 
-			console.log('released');
-			this.dock(e.target); this.sounds.makeUndraggable(e) 
-		})
+		let bites = this.sounds.bites,
+			ctx = this
+
+		const elementPickup = (e) => {
+			e.target.bite.beganWithMouseDown = true
+			ctx.sounds.sendToBackground(bites)
+			ctx.sounds.bringToForeground([e.target])
+			ctx.sounds.setSelectedStyle(e.target)
+			ctx.undock(e.target)
+		}
+
+		const elementRelease = (e) => {
+			if (!e.target.bite.beganWithMouseDown) return;
+			e.target.bite.beganWithMouseDown = false
+			ctx.sounds.bringToForeground(bites)
+			ctx.sounds.setUnselectedStyle(e.target)
+			this.dock(e.target)
+		}
+
+		for (let i=0;i<bites.length;i++) {
+			let drag = interact(bites[i])
+				.on('down', elementPickup)
+				.draggable({ enabled: true, onmove: this.sounds.dragMoveListener })
+				.on('up', elementRelease)
+		}
 	}
 }
 

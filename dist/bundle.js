@@ -46,98 +46,112 @@
 
 	'use strict';
 
-	var _interactTest = __webpack_require__(1);
+	var _sequencer = __webpack_require__(4);
 
-	var _interactTest2 = _interopRequireDefault(_interactTest);
+	var _sequencer2 = _interopRequireDefault(_sequencer);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var sequencer = new Sequencer();
+	// import Playground from '../../playground/playground.js'
+	// import interactTest from '../../playground/interactTest.js'
+
+	var sequencer = new _sequencer2.default();
 
 	// :)
 
-	// import Sequencer from './sequencer.js'
-	// import Playground from '../../playground/playground.js'
 	sequencer.loop();
 
 /***/ },
-/* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/* 1 */,
+/* 2 */
+/***/ function(module, exports) {
 
 	'use strict';
 
-	var _helpers = __webpack_require__(3);
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	var Helpers = function () {
 
-	var _helpers2 = _interopRequireDefault(_helpers);
+		return {
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var interact = __webpack_require__(2);
-
-	var interactTest = function () {
-
-		var container = document.createElement('div'),
-		    drags = [];
-
-		var dragMoveListener = function dragMoveListener(event) {
-			var target = event.target,
-			    x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
-			    y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-
-			console.log('x is', x);
-
-			target.style.webkitTransform = target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-
-			target.setAttribute('data-x', x);
-			target.setAttribute('data-y', y);
-		};
-
-		for (var i = 0; i < 20; i++) {
-			var el = document.createElement('div');
-
-			var styleProps = {
-				top: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
-				left: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
-				position: 'absolute',
-				height: _helpers2.default.toPixels(50),
-				width: _helpers2.default.toPixels(50),
-				backgroundColor: _helpers2.default.toRGB(200, 200, _helpers2.default.randInt(0, 255))
-			};
-
-			el.className = 'soundbite';
-
-			_helpers2.default.setStyle(el, styleProps);
-
-			// if testing bind
-
-			var drag = interact(el).on('down', function () {
-				console.log('touced down');
-			}).draggable({ enabled: true, onmove: dragMoveListener }).on('up', function (e) {
-				console.log('released');
-				_helpers2.default.setStyle(e.target, {
-					top: _helpers2.default.toPixels(0), left: _helpers2.default.toPixels(0), position: 'fixed', transform: 'none'
+			setStyle: function setStyle(el, properties) {
+				var keys = Object.keys(properties);
+				keys.map(function (key) {
+					el.style[key] = properties[key];
 				});
-				e.target.setAttribute('data-x', 0);
-				e.target.setAttribute('data-y', 0);
-			});
+			},
 
-			container.appendChild(el);
+			toPixels: function toPixels(number) {
+				return number.toString() + 'px';
+			},
 
-			drags.push(drag);
-		}
+			randInt: function randInt(min, max) {
+				return Math.round(Math.random() * (max - min) + min);
+			},
 
-		// let drag = interact(container)
-		// 	.on('down', () => { console.log('touced down' )})
-		// 	.draggable({ enabled: true, onmove: dragMoveListener })
-		// 	.on('up', (e) => { console.log('released'); Helpers.setStyle(e.target,{top: 0, left: 0, position: 'fixed' }) })
+			toRGB: function toRGB(r, g, b) {
+				return 'rgb(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ')';
+			},
 
-		// drags.push(drag)
+			getElementCenterInViewport: function getElementCenterInViewport(width, height) {
+				var w = window.innerWidth,
+				    h = window.innerHeight;
+				return { top: (h - height) / 2, left: (w - width) / 2 };
+			},
 
-		document.body.appendChild(container);
+			getMatrixRepresentation: function getMatrixRepresentation(rows, cols) {
+				var matrix = [];
+				for (var i = 0; i < rows; i++) {
+					for (var k = 0; k < cols; k++) {
+						matrix.push({ row: i, col: k });
+					}
+				}
+				return matrix;
+			},
+
+			getElementPosition: function getElementPosition(el) {
+				return {
+					// top: window.getComputedStyle
+				};
+			},
+
+			min: function min(arr) {
+				if (arr.length === 0) return;
+				if (arr.length === 1) return arr[0];
+
+				var min = arr[0];
+
+				for (var i = 1; i < arr.length; i++) {
+					min = Math.min(min, arr[i]);
+				}
+				return min;
+			},
+
+			max: function max(arr) {
+				if (arr.length === 0) return;
+				if (arr.length === 1) return arr[0];
+
+				var max = arr[0];
+
+				for (var i = 1; i < arr.length; i++) {
+					max = Math.max(max, arr[i]);
+				}
+				return max;
+			},
+
+			uniques: function uniques(arr) {
+				return arr.filter(function (val, i, self) {
+					return self.indexOf(val) === i;
+				});
+			}
+		};
 	}();
 
+	exports.default = Helpers;
+
 /***/ },
-/* 2 */
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -6119,92 +6133,530 @@
 
 
 /***/ },
-/* 3 */
-/***/ function(module, exports) {
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	var Helpers = function () {
 
-		return {
+	var _grid = __webpack_require__(5);
 
-			setStyle: function setStyle(el, properties) {
-				var keys = Object.keys(properties);
-				keys.map(function (key) {
-					el.style[key] = properties[key];
-				});
-			},
+	var _grid2 = _interopRequireDefault(_grid);
 
-			toPixels: function toPixels(number) {
-				return number.toString() + 'px';
-			},
+	var _audiohandler = __webpack_require__(7);
 
-			randInt: function randInt(min, max) {
-				return Math.round(Math.random() * (max - min) + min);
-			},
+	var _audiohandler2 = _interopRequireDefault(_audiohandler);
 
-			toRGB: function toRGB(r, g, b) {
-				return 'rgb(' + r.toString() + ',' + g.toString() + ',' + b.toString() + ')';
-			},
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-			getElementCenterInViewport: function getElementCenterInViewport(width, height) {
-				var w = window.innerWidth,
-				    h = window.innerHeight;
-				return { top: (h - height) / 2, left: (w - width) / 2 };
-			},
+	function Sequencer() {
+		this.grid = new _grid2.default();
+		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
+		this.direction = 'col';
+		this.speed = 500;
+		this.loopId = null;
+		this.iteration = 0;
 
-			getMatrixRepresentation: function getMatrixRepresentation(rows, cols) {
-				var matrix = [];
-				for (var i = 0; i < rows; i++) {
-					for (var k = 0; k < cols; k++) {
-						matrix.push({ row: i, col: k });
+		this.setupEventListeners();
+	}
+
+	Sequencer.prototype = {
+		constructor: Sequencer,
+
+		loop: function loop() {
+			var _this = this;
+
+			this.loopId = setInterval(function () {
+				var cells = _this.grid.getRowOrCol(_this.iteration, _this.direction);
+
+				_this.iteration++;
+
+				if (_this.iteration > _this.grid.dimensions[_this.direction + 's']) _this.iteration = 0;
+
+				if (cells.length > 0) {
+					for (var i = 0; i < cells.length; i++) {
+						_this.audio.playSound(cells[i].containedSound.bite.filename);
 					}
 				}
-				return matrix;
-			},
+			}, this.speed);
+		},
 
-			getElementPosition: function getElementPosition(el) {
-				return {
-					// top: window.getComputedStyle
-				};
-			},
+		pause: function pause() {
+			clearInterval(this.loopId);
+		},
 
-			min: function min(arr) {
-				if (arr.length === 0) return;
-				if (arr.length === 1) return arr[0];
-
-				var min = arr[0];
-
-				for (var i = 1; i < arr.length; i++) {
-					min = Math.min(min, arr[i]);
-				}
-				return min;
-			},
-
-			max: function max(arr) {
-				if (arr.length === 0) return;
-				if (arr.length === 1) return arr[0];
-
-				var max = arr[0];
-
-				for (var i = 1; i < arr.length; i++) {
-					max = Math.max(max, arr[i]);
-				}
-				return max;
-			},
-
-			uniques: function uniques(arr) {
-				return arr.filter(function (val, i, self) {
-					return self.indexOf(val) === i;
-				});
+		toggleDirection: function toggleDirection() {
+			this.pause();
+			if (this.direction === 'col') {
+				this.direction = 'row';
+			} else {
+				this.direction = 'col';
 			}
-		};
-	}();
+			this.loop();
+		},
 
-	exports.default = Helpers;
+		handleResize: function handleResize() {
+			this.grid.reposition();
+		},
+
+		setupEventListeners: function setupEventListeners() {
+			var _this2 = this;
+
+			window.addEventListener('resize', function () {
+				_this2.handleResize();
+			});
+		}
+	};
+
+	exports.default = Sequencer;
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(2);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _soundbites = __webpack_require__(6);
+
+	var _soundbites2 = _interopRequireDefault(_soundbites);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var interact = __webpack_require__(3);
+
+	function Grid() {
+		var _this = this;
+
+		this.dimensions = { cellSize: 50, rows: 8, cols: 6 };
+
+		this.canvas = function () {
+			var canvas = document.createElement('canvas');
+
+			canvas.id = 'canvas';
+			canvas.width = _this.dimensions.cellSize * _this.dimensions.cols;
+			canvas.height = _this.dimensions.cellSize * _this.dimensions.rows;
+			canvas.style.zIndex = '-999';
+
+			document.body.appendChild(canvas);
+			return canvas;
+		}();
+
+		this.cells = function () {
+			var matrix = _helpers2.default.getMatrixRepresentation(_this.dimensions.rows, _this.dimensions.cols);
+
+			var cells = matrix.map(function (cell) {
+				return { top: 0, left: 0, row: cell.row, col: cell.col, isEmpty: true, containedSound: null };
+			});
+			return cells;
+		}();
+
+		this.sounds = new _soundbites2.default(this.dimensions.cellSize);
+
+		this.position = _helpers2.default.getElementCenterInViewport(this.canvas.width, this.canvas.height);
+
+		// position the canvas, set the cell boundaries, and raw the grid
+
+		this.reposition();
+		this.draw();
+
+		// configure event listeners
+
+		this.handleElements();
+	}
+
+	Grid.prototype = {
+		constructor: Grid,
+
+		draw: function draw() {
+			var _this2 = this;
+
+			this.cells.map(function (cell) {
+				var x = cell.col * _this2.dimensions.cellSize,
+				    y = cell.row * _this2.dimensions.cellSize,
+				    ctx = _this2.canvas.getContext('2d');
+
+				ctx.fillStyle = _helpers2.default.toRGB(20, 200, _helpers2.default.randInt(0, 255));
+				ctx.fillRect(x, y, _this2.dimensions.cellSize, _this2.dimensions.cellSize);
+			});
+		},
+
+		positionCanvas: function positionCanvas() {
+			this.position = _helpers2.default.getElementCenterInViewport(canvas.width, canvas.height);
+			_helpers2.default.setStyle(canvas, { left: _helpers2.default.toPixels(this.position.left),
+				top: _helpers2.default.toPixels(this.position.top),
+				position: 'absolute'
+			});
+		},
+
+		setCellBounds: function setCellBounds() {
+			var _this3 = this;
+
+			this.cells = this.cells.map(function (cell) {
+				var x = cell.col * _this3.dimensions.cellSize,
+				    y = cell.row * _this3.dimensions.cellSize,
+				    offsetX = _this3.position.left,
+				    offsetY = _this3.position.top;
+
+				cell.top = y + offsetY;
+				cell.left = x + offsetX;
+
+				return cell;
+			});
+		},
+
+		isWithinGrid: function isWithinGrid(position) {
+			var gridPosition = this.position;
+
+			gridPosition.right = gridPosition.left + canvas.width;
+			gridPosition.bottom = gridPosition.top + canvas.height;
+
+			//	pad calculation so that we still snap to the grid when at the grid edges
+
+			//	position is returned from getBoundingClientRect(), and must
+			//	be converted to a regular object first
+
+			var objPosition = {};
+
+			objPosition.left = position.left + this.dimensions.cellSize / 2;
+			objPosition.top = position.top + this.dimensions.cellSize / 2;
+
+			if (objPosition.left < gridPosition.left) return false;
+			if (objPosition.top < gridPosition.top) return false;
+			if (objPosition.left > gridPosition.right) return false;
+			if (objPosition.top > gridPosition.bottom) return false;
+
+			return true;
+		},
+
+		nearestCell: function nearestCell(el) {
+
+			var position = el.getBoundingClientRect();
+
+			if (!this.isWithinGrid(position)) return -1;
+
+			var cells = this.getEmptyCells();
+
+			var min = cells.reduce(function (offsets, cell, i) {
+				var x = Math.abs(position.left - cell.left),
+				    y = Math.abs(position.top - cell.top);
+
+				if (i === 0 || x <= offsets.x && y <= offsets.y) {
+					Object.assign(offsets, { x: x, y: y, row: cell.row, col: cell.col });
+				}
+				return offsets;
+			}, {});
+
+			return cells.filter(function (cell) {
+				return cell.row === min.row & cell.col === min.col;
+			})[0];
+		},
+
+		findCell: function findCell(closest) {
+			var index = this.cells.findIndex(function (cell) {
+				return closest.row === cell.row & closest.col === cell.col;
+			});
+			return index;
+		},
+
+		undock: function undock(el) {
+			if (el.bite.isDocked === false) return;
+
+			var index = el.bite.cellIndex;
+
+			this.cells[index].containedSound = null;
+			this.cells[index].isEmpty = true;
+		},
+
+		dock: function dock(el) {
+			var closest = this.nearestCell(el);
+
+			if (closest === -1) return;
+
+			var index = this.findCell(closest);
+
+			this.cells[index].containedSound = el;
+			this.cells[index].isEmpty = false;
+
+			el.bite.isDocked = true;
+			el.bite.cellIndex = index;
+
+			this.sounds.setPosition(el, closest);
+		},
+
+		getEmptyCells: function getEmptyCells() {
+			return this.cells.filter(function (cell) {
+				return cell.isEmpty === true;
+			});
+		},
+
+		getNonEmptyCells: function getNonEmptyCells() {
+			return this.cells.filter(function (cell) {
+				return cell.isEmpty === false;
+			});
+		},
+
+		getRowOrCol: function getRowOrCol(n, rowOrCol) {
+			return this.cells.filter(function (cell) {
+				return cell[rowOrCol] === n & !cell.isEmpty;
+			});
+		},
+
+		setContainedElementPositions: function setContainedElementPositions() {
+			var _this4 = this;
+
+			var cells = this.getNonEmptyCells();
+			if (cells.length === 0) return;
+			cells.map(function (cell) {
+				return _this4.sounds.setPosition(cell.containedSound, cell);
+			});
+		},
+
+		reposition: function reposition() {
+			this.positionCanvas();this.setCellBounds();this.setContainedElementPositions();
+		},
+
+		// configure handling of element pickup and release from grid
+
+		handleElements: function handleElements() {
+			var _this5 = this;
+
+			var bites = this.sounds.bites,
+			    ctx = this;
+
+			var elementPickup = function elementPickup(e) {
+				e.target.bite.beganWithMouseDown = true;
+				ctx.sounds.sendToBackground(bites);
+				ctx.sounds.bringToForeground([e.target]);
+				ctx.sounds.setSelectedStyle(e.target);
+				ctx.undock(e.target);
+			};
+
+			var elementRelease = function elementRelease(e) {
+				if (!e.target.bite.beganWithMouseDown) return;
+				e.target.bite.beganWithMouseDown = false;
+				ctx.sounds.bringToForeground(bites);
+				ctx.sounds.setUnselectedStyle(e.target);
+				_this5.dock(e.target);
+			};
+
+			for (var i = 0; i < bites.length; i++) {
+				var drag = interact(bites[i]).on('down', elementPickup).draggable({ enabled: true, onmove: this.sounds.dragMoveListener }).on('up', elementRelease);
+			}
+		}
+	};
+
+	exports.default = Grid;
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(2);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function SoundBites(cellSize) {
+		var _this = this;
+
+		this.container = document.createElement('div');
+		this.templates = [{ filename: 'note_e_op.mp3', color: 'blue', createN: 2 }, { filename: 'note_c_op.mp3', color: 'red', createN: 2 }, { filename: 'note_b_op.mp3', color: 'green', createN: 2 }];
+
+		this.bites = function () {
+			var els = [];
+
+			_this.templates.map(function (temp) {
+				for (var i = 0; i < temp.createN; i++) {
+
+					var styleProps = {
+						top: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
+						left: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
+						position: 'absolute',
+						height: _helpers2.default.toPixels(cellSize),
+						width: _helpers2.default.toPixels(cellSize),
+						backgroundColor: temp.color
+					};
+
+					var el = document.createElement('div'),
+					    bite = {};
+
+					el.className = 'soundbite';
+
+					el.id = 'sound' + i.toString();
+
+					bite.filename = temp.filename;
+					bite.isDocked = false;
+					bite.cellIndex = null;
+					bite.size = cellSize;
+					bite.beganWithMouseDown = false;
+
+					_helpers2.default.setStyle(el, styleProps);
+
+					_this.container.appendChild(el);
+
+					el.bite = bite;
+
+					els.push(el);
+				}
+			});
+			return els;
+		}();
+
+		// add bites to the document
+
+		document.body.appendChild(this.container);
+	}
+
+	SoundBites.prototype = {
+		constructor: SoundBites,
+
+		setSelectedStyle: function setSelectedStyle(el) {
+			console.log('would set selected style');
+		},
+		setUnselectedStyle: function setUnselectedStyle(el) {
+			console.log('would set unselected style');
+		},
+
+
+		setPosition: function setPosition(el, pos) {
+			_helpers2.default.setStyle(el, {
+				position: 'fixed',
+				top: _helpers2.default.toPixels(pos.top),
+				left: _helpers2.default.toPixels(pos.left),
+				transform: 'none'
+			});
+			el.setAttribute('data-x', 0);
+			el.setAttribute('data-y', 0);
+		},
+
+		sendToBackground: function sendToBackground(bites) {
+			bites.map(function (bite) {
+				_helpers2.default.setStyle(bite, { zIndex: '-1' });
+			});
+		},
+
+		bringToForeground: function bringToForeground(bites) {
+			bites.map(function (bite) {
+				_helpers2.default.setStyle(bite, { zIndex: '1' });
+			});
+		},
+
+		dragMoveListener: function dragMoveListener(e) {
+			var target = e.target,
+			    x = (parseFloat(target.getAttribute('data-x')) || 0) + e.dx,
+			    y = (parseFloat(target.getAttribute('data-y')) || 0) + e.dy;
+
+			target.style.webkitTransform = target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+
+			target.setAttribute('data-x', x);
+			target.setAttribute('data-y', y);
+		},
+
+		draggable: function draggable(e) {
+			_helpers2.default.setStyle(e.target, {
+				top: _helpers2.default.toPixels(e.clientY - Math.round(e.target.bite.size / 2)),
+				left: _helpers2.default.toPixels(e.clientX - Math.round(e.target.bite.size / 2))
+			});
+		},
+
+		getFileNames: function getFileNames() {
+			return this.bites.map(function (bite) {
+				return bite.bite.filename;
+			});
+		}
+	};
+
+	exports.default = SoundBites;
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(2);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function AudioHandler(filenames) {
+		var AudioContext = window.AudioContext || window.webkitAudioContext;
+
+		filenames = _helpers2.default.uniques(filenames);
+
+		this.filenames = [];
+		this.sounds = [];
+		this.context = new AudioContext();
+		this.loadSounds(filenames);
+	}
+
+	AudioHandler.prototype = {
+
+		constructor: AudioHandler,
+
+		loadSounds: function loadSounds(files) {
+			var _this = this;
+
+			files.map(function (file) {
+				_this.loadSound(file);
+				_this.filenames.push(file);
+			});
+		},
+
+		loadSound: function loadSound(filename) {
+			var _this2 = this;
+
+			if (this.filenames.indexOf(filename) !== -1) return;
+
+			var request = new XMLHttpRequest(),
+			    fullfile = '/sequencer/sounds/' + filename;
+
+			request.open('GET', fullfile);
+			request.responseType = 'arraybuffer';
+
+			request.onload = function () {
+				_this2.context.decodeAudioData(request.response, function (buffer) {
+					_this2.sounds.push(buffer);
+				});
+			};
+
+			request.send();
+		},
+
+		playSound: function playSound(id) {
+			var source = this.context.createBufferSource(),
+			    index = this.filenames.indexOf(id);
+
+			source.buffer = this.sounds[index];
+			source.connect(this.context.destination);
+			source.start(0);
+		}
+	};
+
+	exports.default = AudioHandler;
 
 /***/ }
 /******/ ]);

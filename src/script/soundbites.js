@@ -26,10 +26,15 @@ function SoundBites(cellSize) {
 				let el = document.createElement('div'),
 					bite = {}
 
+				el.className = 'soundbite'
+
+				el.id = 'sound' + i.toString()
+
 				bite.filename = temp.filename
 				bite.isDocked = false
 				bite.cellIndex = null
 				bite.size = cellSize
+				bite.beganWithMouseDown = false
 
 				Helpers.setStyle(el,styleProps)
 
@@ -51,8 +56,20 @@ function SoundBites(cellSize) {
 SoundBites.prototype = {
 	constructor: SoundBites,
 
+	setSelectedStyle(el) { console.log('would set selected style') },
+
+	setUnselectedStyle(el) { console.log('would set unselected style') },
+
 	setPosition: function(el,pos) {
-		Helpers.setStyle(el,{position: 'fixed', top: Helpers.toPixels(pos.top), left: Helpers.toPixels(pos.left) })
+		Helpers.setStyle(el,
+			{
+				position: 'fixed', 
+				top: Helpers.toPixels(pos.top),
+				left: Helpers.toPixels(pos.left),
+				transform: 'none'
+			})
+		el.setAttribute('data-x', 0);
+		el.setAttribute('data-y', 0);
 	},
 
 	sendToBackground: function(bites) {
@@ -63,15 +80,17 @@ SoundBites.prototype = {
 		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '1' })})
 	},
 
-	makeDraggable: function(e) {
-		this.sendToBackground(this.bites)
-		this.bringToForeground([e.target])
-		window.addEventListener('mousemove',this.draggable)
-	},
+	dragMoveListener: function(e) {
+		let target = e.target,
+        	x = (parseFloat(target.getAttribute('data-x')) || 0) + e.dx,
+        	y = (parseFloat(target.getAttribute('data-y')) || 0) + e.dy
 
-	makeUndraggable: function(e) {
-		this.bringToForeground(this.bites)
-		window.removeEventListener('mousemove',this.draggable)
+        target.style.webkitTransform =
+    	target.style.transform =
+      		'translate(' + x + 'px, ' + y + 'px)';
+
+		target.setAttribute('data-x', x);
+    	target.setAttribute('data-y', y);
 	},
 
 	draggable: function(e) {

@@ -19,8 +19,6 @@ Sequencer.prototype = {
 		this.loopId = setInterval( () => {
 			let cells = this.grid.getRowOrCol(this.iteration,this.direction)
 
-			console.log(cells.length)
-
 			this.iteration++
 
 			if (this.iteration > this.grid.dimensions[this.direction + 's']) this.iteration = 0;

@@ -1,0 +1,15 @@
+@keyframes select-soundbite {
+  from {
+    transform: scale(1, 1); }
+  to {
+    transform: scale(1.1, 1.1); } }
+.soundbite {
+  border-radius: 50%;
+  transform: scale(1, 1); }
+
+.soundbite--selected {
+  border-radius: 50%;
+  animation-name: select-soundbite;
+  animation-duration: .2s; }
+
+/*# sourceMappingURL=main.css.map */
