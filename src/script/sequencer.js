@@ -14,6 +14,7 @@ function Sequencer() {
 	this.createControls()
 	this.positionControls()
 	this.setupEventListeners()
+	this.playDummySound()
 }
 
 Sequencer.prototype = {
@@ -116,6 +117,28 @@ Sequencer.prototype = {
 		let baseClass = el.className
 		el.className+= '--selected'
 		setTimeout(() => { el.className = baseClass },100)
+	},
+
+	playDummySound: function() {
+		let ctx = this
+
+		const dummySound = () => {
+			let buffer = ctx.audio.context.createBuffer(1,1,22050),
+				source = ctx.audio.context.createBufferSource()
+
+			source.buffer = buffer
+			source.connect(ctx.audio.context.destination)
+			source.start(0)
+			console.log('played sound');
+		}
+
+		if (this.playedDummySound) {
+			this.grid.canvas.removeEventListener('mousedown',dummySound) 
+			return
+		}
+
+		this.grid.canvas.addEventListener('mousedown',dummySound)
+		this.playedDummySound = true
 	}
 
 }

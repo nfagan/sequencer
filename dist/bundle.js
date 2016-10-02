@@ -97,6 +97,7 @@
 		this.createControls();
 		this.positionControls();
 		this.setupEventListeners();
+		this.playDummySound();
 	}
 
 	Sequencer.prototype = {
@@ -210,6 +211,28 @@
 			setTimeout(function () {
 				el.className = baseClass;
 			}, 100);
+		},
+
+		playDummySound: function playDummySound() {
+			var ctx = this;
+
+			var dummySound = function dummySound() {
+				var buffer = ctx.audio.context.createBuffer(1, 1, 22050),
+				    source = ctx.audio.context.createBufferSource();
+
+				source.buffer = buffer;
+				source.connect(ctx.audio.context.destination);
+				source.start(0);
+				console.log('played sound');
+			};
+
+			if (this.playedDummySound) {
+				this.grid.canvas.removeEventListener('mousedown', dummySound);
+				return;
+			}
+
+			this.grid.canvas.addEventListener('mousedown', dummySound);
+			this.playedDummySound = true;
 		}
 
 	};
@@ -6686,8 +6709,6 @@
 		this.sounds = [];
 		this.context = new AudioContext();
 		this.loadSounds(filenames);
-		this.playedDummeySound = false;
-		this.playDummySound(); //	allow iOS sound
 	}
 
 	AudioHandler.prototype = {
@@ -6730,27 +6751,6 @@
 			source.buffer = this.sounds[index];
 			source.connect(this.context.destination);
 			source.start(0);
-		},
-
-		playDummySound: function playDummySound() {
-			var ctx = this;
-
-			var dummySound = function dummySound() {
-				var buffer = ctx.context.createBuffer(1, 1, 22050),
-				    source = ctx.context.createBufferSource();
-
-				source.buffer = buffer;
-				source.connect(ctx.context.destination);
-				source.start(0);
-			};
-
-			if (this.playedDummeySound) {
-				window.removeEventListener('mousedown', dummySound);
-				return;
-			}
-
-			window.addEventListener('mousedown', dummySound);
-			this.playedDummeySound = true;
 		}
 	};
 
