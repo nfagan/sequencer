@@ -68,6 +68,9 @@ SocketHandler.prototype = {
 		if (!this.grid.cellIsEmpty(sound.row,sound.col)) return;
 
 		element = element[0]
+
+		if (element.bite.isSelected) return;
+
 		this.grid.undock(element)		//	if already undocked, will not do anything
 
 		let newPosition = this.grid.getCell(sound)

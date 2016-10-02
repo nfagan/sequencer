@@ -224,6 +224,7 @@ Grid.prototype = {
 		const elementPickup = (e) => {
 			ctx.sounds.clearPlayingAnimation(e.target);
 			e.target.bite.beganWithMouseDown = true
+			e.target.bite.isSelected = true
 			ctx.sounds.sendToBackground(bites)
 			ctx.sounds.bringToForeground([e.target])
 			ctx.sounds.setSelectedStyle(e.target)
@@ -233,6 +234,7 @@ Grid.prototype = {
 		const elementRelease = (e) => {
 			if (!e.target.bite.beganWithMouseDown) return;
 			e.target.bite.beganWithMouseDown = false
+			e.target.bite.isSelected = false
 			ctx.sounds.bringToForeground(bites)
 			ctx.sounds.setUnselectedStyle(e.target)
 			this.dock(e.target)

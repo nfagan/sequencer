@@ -39,6 +39,7 @@ function SoundBites(cellSize) {
 				bite.cellIndex = null
 				bite.size = cellSize
 				bite.beganWithMouseDown = false
+				bite.isSelected = false
 
 				Helpers.setStyle(el,styleProps)
 
