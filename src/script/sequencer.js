@@ -1,5 +1,6 @@
 import Grid from './grid.js'
 import AudioHandler from './audiohandler.js'
+import Helpers from './helpers.js'
 
 function Sequencer() {
 	this.grid = new Grid()
@@ -8,7 +9,10 @@ function Sequencer() {
 	this.speed = 500
 	this.loopId = null
 	this.iteration = 0
+	this.isPlaying = false
 
+	this.createControls()
+	this.positionControls()
 	this.setupEventListeners()
 }
 
@@ -16,6 +20,7 @@ Sequencer.prototype = {
 	constructor: Sequencer,
 
 	loop: function() {
+		this.isPlaying = true
 		this.loopId = setInterval( () => {
 			let cells = this.grid.getRowOrCol(this.iteration,this.direction)
 
@@ -34,6 +39,7 @@ Sequencer.prototype = {
 
 	pause: function() {
 		clearInterval(this.loopId)
+		this.isPlaying = false
 	},
 
 	toggleDirection: function() {
@@ -46,11 +52,72 @@ Sequencer.prototype = {
 		this.loop()
 	},
 
-	handleResize: function() { this.grid.reposition() },
+	createControls: function() {
+		let container = document.createElement('div'),
+			controlsContainer = document.createElement('div'),
+			controlIds = ['play','direction','private'],
+			controlText = ['&#9995;','&#128080;','&#128075;']
+
+		for (let i=0;i<controlIds.length;i++) {
+			let el = document.createElement('p')
+			el.innerHTML = controlText[i]
+			el.id = controlIds[i]
+			controlsContainer.appendChild(el)
+		}
+
+		container.className = 'container'
+		controlsContainer.className = 'controls'
+
+		container.appendChild(controlsContainer)
+		document.body.appendChild(container)
+	},
+
+	positionControls: function() {
+		let controls = document.querySelectorAll('p'),
+			container = document.querySelector('.container'),
+			height = parseFloat(window.getComputedStyle(controls[0]).getPropertyValue('height')),
+			gridTop = this.grid.position.top
+
+		Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
+	},
+
+	handlePlayButton: function() {
+		let play = document.querySelector('#play')
+		const handlePlaying = () => { this.isPlaying ? this.pause() : this.loop() }
+		play.addEventListener('click', () => {
+			handlePlaying()
+			this.addSelectedClass(play)
+	 	})
+	},
+
+	handleDirectionButton: function() {
+		let direction = document.querySelector('#direction')
+
+		direction.addEventListener('click', () => { 
+			this.toggleDirection()
+			this.addSelectedClass(direction)
+		})
+	},
+
+	handleResize: function() { 
+		window.addEventListener('resize', () => {
+			this.grid.reposition() 
+			this.positionControls()
+		})
+	},
 
 	setupEventListeners: function() {
-		window.addEventListener('resize',( () => { this.handleResize() }))
+		this.handleResize()
+		this.handlePlayButton()
+		this.handleDirectionButton()
+	},
+
+	addSelectedClass: function(el) {
+		let baseClass = el.className
+		el.className+= '--selected'
+		setTimeout(() => { el.className = baseClass },100)
 	}
+
 }
 
 export default Sequencer

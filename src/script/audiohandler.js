@@ -9,6 +9,8 @@ function AudioHandler(filenames) {
 	this.sounds = []
 	this.context = new AudioContext()
 	this.loadSounds(filenames)
+	this.playedDummeySound = false
+	this.playDummySound()	//	allow iOS sound
 }
 
 AudioHandler.prototype = {
@@ -47,6 +49,27 @@ AudioHandler.prototype = {
 		source.buffer = this.sounds[index]
 		source.connect(this.context.destination)
 		source.start(0)
+	},
+
+	playDummySound: function() {
+		let ctx = this
+
+		const dummySound = () => {
+			let buffer = ctx.context.createBuffer(1,1,22050),
+				source = ctx.context.createBufferSource()
+
+			source.buffer = buffer
+			source.connect(ctx.context.destination)
+			source.start(0)
+		}
+
+		if (this.playedDummeySound) {
+			window.removeEventListener('mousedown',dummySound) 
+			return
+		}
+
+		window.addEventListener('mousedown',dummySound)
+		this.playedDummeySound = true
 	}
 }
 

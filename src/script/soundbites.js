@@ -20,7 +20,8 @@ function SoundBites(cellSize) {
 					position: 'absolute',
 					height: Helpers.toPixels(cellSize),
 					width: Helpers.toPixels(cellSize),
-					backgroundColor: temp.color
+					backgroundColor: temp.color,
+					zIndex: 1
 				}
 
 				let el = document.createElement('div'),

@@ -1,18 +1,35 @@
+html, body { padding: 0; margin: 0;  }
+
 // soundbites
 
-@keyframes select-soundbite {
-	from { transform: scale(1,1); }
-	to { transform: scale(1.1,1.1); }
+.soundbite { border-radius: 50%; }
+
+// container
+
+.container {
+	z-index: 0;
+	margin: 0; padding: 0;
+	position: fixed;
+	width: 100vw; height: 10vh; 
+	display: flex; flex-direction: row; align-items: center; justify-content: center;
 }
 
-.soundbite {
-	border-radius: 50%;
-	transform: scale(1,1);
-}
+// controls
 
-.soundbite--selected {
-	// transform: scale(1.1,1.1);
-	border-radius: 50%;
-	animation-name: select-soundbite;
-	animation-duration: .2s;
+.controls p {
+	font-size: 2em;
+	float: left; 
+
+	transition: transform .2s;
+	cursor: pointer;
+
+	&#play, &#direction { 
+		padding-right: 1em;
+	}
+
+	&:hover {
+		transform: scale(1.1,1.1);
+	}
+
+	&.--selected { transform: scale(.9,.9); }
 }

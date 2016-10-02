@@ -79,6 +79,10 @@
 
 	var _audiohandler2 = _interopRequireDefault(_audiohandler);
 
+	var _helpers = __webpack_require__(3);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function Sequencer() {
@@ -88,7 +92,10 @@
 		this.speed = 500;
 		this.loopId = null;
 		this.iteration = 0;
+		this.isPlaying = false;
 
+		this.createControls();
+		this.positionControls();
 		this.setupEventListeners();
 	}
 
@@ -98,6 +105,7 @@
 		loop: function loop() {
 			var _this = this;
 
+			this.isPlaying = true;
 			this.loopId = setInterval(function () {
 				var cells = _this.grid.getRowOrCol(_this.iteration, _this.direction);
 
@@ -115,6 +123,7 @@
 
 		pause: function pause() {
 			clearInterval(this.loopId);
+			this.isPlaying = false;
 		},
 
 		toggleDirection: function toggleDirection() {
@@ -127,17 +136,82 @@
 			this.loop();
 		},
 
+		createControls: function createControls() {
+			var container = document.createElement('div'),
+			    controlsContainer = document.createElement('div'),
+			    controlIds = ['play', 'direction', 'private'],
+			    controlText = ['&#9995;', '&#128080;', '&#128075;'];
+
+			for (var i = 0; i < controlIds.length; i++) {
+				var el = document.createElement('p');
+				el.innerHTML = controlText[i];
+				el.id = controlIds[i];
+				controlsContainer.appendChild(el);
+			}
+
+			container.className = 'container';
+			controlsContainer.className = 'controls';
+
+			container.appendChild(controlsContainer);
+			document.body.appendChild(container);
+		},
+
+		positionControls: function positionControls() {
+			var controls = document.querySelectorAll('p'),
+			    container = document.querySelector('.container'),
+			    height = parseFloat(window.getComputedStyle(controls[0]).getPropertyValue('height')),
+			    gridTop = this.grid.position.top;
+
+			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(gridTop / 2 - height / 2) });
+		},
+
+		handlePlayButton: function handlePlayButton() {
+			var _this2 = this;
+
+			var play = document.querySelector('#play');
+			var handlePlaying = function handlePlaying() {
+				_this2.isPlaying ? _this2.pause() : _this2.loop();
+			};
+			play.addEventListener('click', function () {
+				handlePlaying();
+				_this2.addSelectedClass(play);
+			});
+		},
+
+		handleDirectionButton: function handleDirectionButton() {
+			var _this3 = this;
+
+			var direction = document.querySelector('#direction');
+
+			direction.addEventListener('click', function () {
+				_this3.toggleDirection();
+				_this3.addSelectedClass(direction);
+			});
+		},
+
 		handleResize: function handleResize() {
-			this.grid.reposition();
+			var _this4 = this;
+
+			window.addEventListener('resize', function () {
+				_this4.grid.reposition();
+				_this4.positionControls();
+			});
 		},
 
 		setupEventListeners: function setupEventListeners() {
-			var _this2 = this;
+			this.handleResize();
+			this.handlePlayButton();
+			this.handleDirectionButton();
+		},
 
-			window.addEventListener('resize', function () {
-				_this2.handleResize();
-			});
+		addSelectedClass: function addSelectedClass(el) {
+			var baseClass = el.className;
+			el.className += '--selected';
+			setTimeout(function () {
+				el.className = baseClass;
+			}, 100);
 		}
+
 	};
 
 	exports.default = Sequencer;
@@ -510,7 +584,8 @@
 						position: 'absolute',
 						height: _helpers2.default.toPixels(cellSize),
 						width: _helpers2.default.toPixels(cellSize),
-						backgroundColor: temp.color
+						backgroundColor: temp.color,
+						zIndex: 1
 					};
 
 					var el = document.createElement('div'),
@@ -6611,6 +6686,8 @@
 		this.sounds = [];
 		this.context = new AudioContext();
 		this.loadSounds(filenames);
+		this.playedDummeySound = false;
+		this.playDummySound(); //	allow iOS sound
 	}
 
 	AudioHandler.prototype = {
@@ -6653,6 +6730,27 @@
 			source.buffer = this.sounds[index];
 			source.connect(this.context.destination);
 			source.start(0);
+		},
+
+		playDummySound: function playDummySound() {
+			var ctx = this;
+
+			var dummySound = function dummySound() {
+				var buffer = ctx.context.createBuffer(1, 1, 22050),
+				    source = ctx.context.createBufferSource();
+
+				source.buffer = buffer;
+				source.connect(ctx.context.destination);
+				source.start(0);
+			};
+
+			if (this.playedDummeySound) {
+				window.removeEventListener('mousedown', dummySound);
+				return;
+			}
+
+			window.addEventListener('mousedown', dummySound);
+			this.playedDummeySound = true;
 		}
 	};
 
