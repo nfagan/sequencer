@@ -42,6 +42,7 @@ Sequencer.prototype = {
 			if (cells.length > 0) {
 				for (let i=0;i<cells.length;i++) {
 					this.audio.playSound(cells[i].containedSound.bite.filename)
+					this.grid.sounds.animateElementPlaying(cells[i].containedSound)
 				}
 			}
 

@@ -1,4 +1,5 @@
 import Helpers from './helpers.js'
+const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
 function SoundBites(cellSize) {
 	this.container = document.createElement('div')
@@ -32,6 +33,7 @@ function SoundBites(cellSize) {
 				el.id = 'sound' + i.toString()
 
 				bite.filename = temp.filename
+				bite.color = temp.color
 				bite.isDocked = false
 				bite.cellIndex = null
 				bite.size = cellSize
@@ -94,16 +96,24 @@ SoundBites.prototype = {
     	target.setAttribute('data-y', y);
 	},
 
-	draggable: function(e) {
-		Helpers.setStyle(e.target,
-		{
-			top: Helpers.toPixels(e.clientY - Math.round(e.target.bite.size/2)),
-			left: Helpers.toPixels(e.clientX - Math.round(e.target.bite.size/2)),
-		})
-	},
-
 	getFileNames: function() {
 		return this.bites.map( (bite) => { return bite.bite.filename })
+	},
+
+	clearTimeline: function(el) {
+		if (!el.bite.timeline) return;
+		el.bite.timeline.seek(0)
+		el.bite.timeline.kill()
+	},
+
+	animateElementPlaying: function(el) {
+		let tl = new TimelineMax(),
+			originalColor = el.bite.color
+
+		tl.to(el,.4,{ css: { 'transform': 'scale(1.1,1.1)', 'backgroundColor': 'white' } })
+			.to(el,.4,{ css: { 'transform': 'scale(1,1)', 'backgroundColor': originalColor } })
+
+		el.bite.timeline = tl
 	}
 }
 

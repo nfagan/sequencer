@@ -1,6 +1,7 @@
 import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
 const interact = require('interact.js')
+const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
 function Grid(dimensions) {
 	this.dimensions = dimensions
@@ -186,6 +187,7 @@ Grid.prototype = {
 			ctx = this
 
 		const elementPickup = (e) => {
+			ctx.sounds.clearTimeline(e.target);
 			e.target.bite.beganWithMouseDown = true
 			ctx.sounds.sendToBackground(bites)
 			ctx.sounds.bringToForeground([e.target])
