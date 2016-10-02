@@ -88,7 +88,7 @@
 	var interact = __webpack_require__(5);
 
 	function Sequencer() {
-		this.grid = new _grid2.default({ cellSize: 50, rows: 8, cols: 6 });
+		this.grid = new _grid2.default(this.defineGridSize());
 		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
 		this.direction = 'col';
 		this.speed = 500;
@@ -102,11 +102,17 @@
 		this.createControls();
 		this.positionControls();
 		this.setupEventListeners();
-		this.playDummySound();
+		this.playDummySound(); //	for proper iOS functionality
 	}
 
 	Sequencer.prototype = {
 		constructor: Sequencer,
+
+		defineGridSize: function defineGridSize() {
+			var h = window.innerHeight;
+			if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
+			return { cellSize: 50, rows: 8, cols: 6 };
+		},
 
 		loop: function loop() {
 			var _this = this;
@@ -180,7 +186,7 @@
 				containerClassName: 'bpmContainer',
 				controlsContainerClassName: 'controls',
 				controlIds: ['minus', 'plus'],
-				controlText: ['&#9778;', '&#9781;']
+				controlText: ['&#9876;', '&#9935;']
 			};
 
 			var controlCreator = function controlCreator(props) {
@@ -224,8 +230,10 @@
 			    gridTop = this.grid.position.top,
 			    gridHeight = this.grid.canvas.height;
 
-			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(gridTop / 2 - height / 2) });
-			_helpers2.default.setStyle(bpmContainer, { top: _helpers2.default.toPixels(gridTop + gridHeight + height / 2) });
+			// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
+			// Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
+			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(gridTop - 85) });
+			_helpers2.default.setStyle(bpmContainer, { top: _helpers2.default.toPixels(gridTop + gridHeight + 20) });
 		},
 
 		handlePlayButton: function handlePlayButton() {

@@ -4,7 +4,7 @@ import Helpers from './helpers.js'
 const interact = require('interact.js')
 
 function Sequencer() {
-	this.grid = new Grid({ cellSize: 50, rows: 8, cols: 6 })
+	this.grid = new Grid(this.defineGridSize())
 	this.audio = new AudioHandler(this.grid.sounds.getFileNames())
 	this.direction = 'col'
 	this.speed = 500
@@ -18,11 +18,17 @@ function Sequencer() {
 	this.createControls()
 	this.positionControls()
 	this.setupEventListeners()
-	this.playDummySound()
+	this.playDummySound()	//	for proper iOS functionality
 }
 
 Sequencer.prototype = {
 	constructor: Sequencer,
+
+	defineGridSize: function() {
+		let h = window.innerHeight
+		if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
+		return { cellSize: 50, rows: 8, cols: 6 }
+	},
 
 	loop: function() {
 		this.isPlaying = true
@@ -95,7 +101,7 @@ Sequencer.prototype = {
 			containerClassName: 'bpmContainer',
 			controlsContainerClassName: 'controls',
 			controlIds: ['minus','plus'],
-			controlText : ['&#9778;','&#9781;']
+			controlText : ['&#9876;','&#9935;']
 		}
 
 		const controlCreator = (props) => {
@@ -139,8 +145,10 @@ Sequencer.prototype = {
 			gridTop = this.grid.position.top,
 			gridHeight = this.grid.canvas.height
 
-		Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
-		Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
+		// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
+		// Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
+		Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop - 85) })
+		Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + 20) })
 	},
 
 	handlePlayButton: function() {
