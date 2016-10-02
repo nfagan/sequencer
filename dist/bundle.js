@@ -46,7 +46,7 @@
 
 	'use strict';
 
-	var _sequencer = __webpack_require__(4);
+	var _sequencer = __webpack_require__(1);
 
 	var _sequencer2 = _interopRequireDefault(_sequencer);
 
@@ -62,8 +62,334 @@
 	sequencer.loop();
 
 /***/ },
-/* 1 */,
+/* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _grid = __webpack_require__(2);
+
+	var _grid2 = _interopRequireDefault(_grid);
+
+	var _audiohandler = __webpack_require__(6);
+
+	var _audiohandler2 = _interopRequireDefault(_audiohandler);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function Sequencer() {
+		this.grid = new _grid2.default();
+		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
+		this.direction = 'col';
+		this.speed = 500;
+		this.loopId = null;
+		this.iteration = 0;
+
+		this.setupEventListeners();
+	}
+
+	Sequencer.prototype = {
+		constructor: Sequencer,
+
+		loop: function loop() {
+			var _this = this;
+
+			this.loopId = setInterval(function () {
+				var cells = _this.grid.getRowOrCol(_this.iteration, _this.direction);
+
+				_this.iteration++;
+
+				if (_this.iteration > _this.grid.dimensions[_this.direction + 's']) _this.iteration = 0;
+
+				if (cells.length > 0) {
+					for (var i = 0; i < cells.length; i++) {
+						_this.audio.playSound(cells[i].containedSound.bite.filename);
+					}
+				}
+			}, this.speed);
+		},
+
+		pause: function pause() {
+			clearInterval(this.loopId);
+		},
+
+		toggleDirection: function toggleDirection() {
+			this.pause();
+			if (this.direction === 'col') {
+				this.direction = 'row';
+			} else {
+				this.direction = 'col';
+			}
+			this.loop();
+		},
+
+		handleResize: function handleResize() {
+			this.grid.reposition();
+		},
+
+		setupEventListeners: function setupEventListeners() {
+			var _this2 = this;
+
+			window.addEventListener('resize', function () {
+				_this2.handleResize();
+			});
+		}
+	};
+
+	exports.default = Sequencer;
+
+/***/ },
 /* 2 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(3);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _soundbites = __webpack_require__(4);
+
+	var _soundbites2 = _interopRequireDefault(_soundbites);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var interact = __webpack_require__(5);
+
+	function Grid() {
+		var _this = this;
+
+		this.dimensions = { cellSize: 50, rows: 8, cols: 6 };
+
+		this.canvas = function () {
+			var canvas = document.createElement('canvas');
+
+			canvas.id = 'canvas';
+			canvas.width = _this.dimensions.cellSize * _this.dimensions.cols;
+			canvas.height = _this.dimensions.cellSize * _this.dimensions.rows;
+			canvas.style.position = 'fixed';
+			canvas.style.zIndex = '0';
+
+			document.body.appendChild(canvas);
+			return canvas;
+		}();
+
+		this.cells = function () {
+			var matrix = _helpers2.default.getMatrixRepresentation(_this.dimensions.rows, _this.dimensions.cols);
+
+			var cells = matrix.map(function (cell) {
+				return { top: 0, left: 0, row: cell.row, col: cell.col, isEmpty: true, containedSound: null };
+			});
+			return cells;
+		}();
+
+		this.sounds = new _soundbites2.default(this.dimensions.cellSize);
+
+		this.position = _helpers2.default.getElementCenterInViewport(this.canvas.width, this.canvas.height);
+
+		// position the canvas, set the cell boundaries, and raw the grid
+
+		this.reposition();
+		this.draw();
+
+		// configure event listeners
+
+		this.handleElements();
+	}
+
+	Grid.prototype = {
+		constructor: Grid,
+
+		draw: function draw() {
+			var _this2 = this;
+
+			this.cells.map(function (cell) {
+				var x = cell.col * _this2.dimensions.cellSize,
+				    y = cell.row * _this2.dimensions.cellSize,
+				    ctx = _this2.canvas.getContext('2d');
+
+				ctx.fillStyle = _helpers2.default.toRGB(20, 200, _helpers2.default.randInt(0, 255));
+				ctx.fillRect(x, y, _this2.dimensions.cellSize, _this2.dimensions.cellSize);
+			});
+		},
+
+		positionCanvas: function positionCanvas() {
+			this.position = _helpers2.default.getElementCenterInViewport(canvas.width, canvas.height);
+			_helpers2.default.setStyle(canvas, { left: _helpers2.default.toPixels(this.position.left),
+				top: _helpers2.default.toPixels(this.position.top),
+				position: 'absolute'
+			});
+		},
+
+		setCellBounds: function setCellBounds() {
+			var _this3 = this;
+
+			this.cells = this.cells.map(function (cell) {
+				var x = cell.col * _this3.dimensions.cellSize,
+				    y = cell.row * _this3.dimensions.cellSize,
+				    offsetX = _this3.position.left,
+				    offsetY = _this3.position.top;
+
+				cell.top = y + offsetY;
+				cell.left = x + offsetX;
+
+				return cell;
+			});
+		},
+
+		isWithinGrid: function isWithinGrid(position) {
+			var gridPosition = this.position;
+
+			gridPosition.right = gridPosition.left + canvas.width;
+			gridPosition.bottom = gridPosition.top + canvas.height;
+
+			//	pad calculation so that we still snap to the grid when at the grid edges
+
+			//	position is returned from getBoundingClientRect(), and must
+			//	be converted to a regular object first
+
+			var objPosition = {};
+
+			objPosition.left = position.left + this.dimensions.cellSize / 2;
+			objPosition.top = position.top + this.dimensions.cellSize / 2;
+
+			if (objPosition.left < gridPosition.left) return false;
+			if (objPosition.top < gridPosition.top) return false;
+			if (objPosition.left > gridPosition.right) return false;
+			if (objPosition.top > gridPosition.bottom) return false;
+
+			return true;
+		},
+
+		nearestCell: function nearestCell(el) {
+
+			var position = el.getBoundingClientRect();
+
+			if (!this.isWithinGrid(position)) return -1;
+
+			var cells = this.getEmptyCells();
+
+			var min = cells.reduce(function (offsets, cell, i) {
+				var x = Math.abs(position.left - cell.left),
+				    y = Math.abs(position.top - cell.top);
+
+				if (i === 0 || x <= offsets.x && y <= offsets.y) {
+					Object.assign(offsets, { x: x, y: y, row: cell.row, col: cell.col });
+				}
+				return offsets;
+			}, {});
+
+			return cells.filter(function (cell) {
+				return cell.row === min.row & cell.col === min.col;
+			})[0];
+		},
+
+		findCell: function findCell(closest) {
+			var index = this.cells.findIndex(function (cell) {
+				return closest.row === cell.row & closest.col === cell.col;
+			});
+			return index;
+		},
+
+		undock: function undock(el) {
+			if (el.bite.isDocked === false) return;
+
+			var index = el.bite.cellIndex;
+
+			this.cells[index].containedSound = null;
+			this.cells[index].isEmpty = true;
+		},
+
+		dock: function dock(el) {
+			var closest = this.nearestCell(el);
+
+			if (closest === -1) return;
+
+			var index = this.findCell(closest);
+
+			this.cells[index].containedSound = el;
+			this.cells[index].isEmpty = false;
+
+			el.bite.isDocked = true;
+			el.bite.cellIndex = index;
+
+			this.sounds.setPosition(el, closest);
+		},
+
+		getEmptyCells: function getEmptyCells() {
+			return this.cells.filter(function (cell) {
+				return cell.isEmpty === true;
+			});
+		},
+
+		getNonEmptyCells: function getNonEmptyCells() {
+			return this.cells.filter(function (cell) {
+				return cell.isEmpty === false;
+			});
+		},
+
+		getRowOrCol: function getRowOrCol(n, rowOrCol) {
+			return this.cells.filter(function (cell) {
+				return cell[rowOrCol] === n & !cell.isEmpty;
+			});
+		},
+
+		setContainedElementPositions: function setContainedElementPositions() {
+			var _this4 = this;
+
+			var cells = this.getNonEmptyCells();
+			if (cells.length === 0) return;
+			cells.map(function (cell) {
+				return _this4.sounds.setPosition(cell.containedSound, cell);
+			});
+		},
+
+		reposition: function reposition() {
+			this.positionCanvas();this.setCellBounds();this.setContainedElementPositions();
+		},
+
+		// configure handling of element pickup and release from grid
+
+		handleElements: function handleElements() {
+			var _this5 = this;
+
+			var bites = this.sounds.bites,
+			    ctx = this;
+
+			var elementPickup = function elementPickup(e) {
+				e.target.bite.beganWithMouseDown = true;
+				ctx.sounds.sendToBackground(bites);
+				ctx.sounds.bringToForeground([e.target]);
+				ctx.sounds.setSelectedStyle(e.target);
+				ctx.undock(e.target);
+			};
+
+			var elementRelease = function elementRelease(e) {
+				if (!e.target.bite.beganWithMouseDown) return;
+				e.target.bite.beganWithMouseDown = false;
+				ctx.sounds.bringToForeground(bites);
+				ctx.sounds.setUnselectedStyle(e.target);
+				_this5.dock(e.target);
+			};
+
+			for (var i = 0; i < bites.length; i++) {
+				var drag = interact(bites[i]).on('down', elementPickup).draggable({ enabled: true, onmove: this.sounds.dragMoveListener }).on('up', elementRelease);
+			}
+		}
+	};
+
+	exports.default = Grid;
+
+/***/ },
+/* 3 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -151,7 +477,135 @@
 	exports.default = Helpers;
 
 /***/ },
-/* 3 */
+/* 4 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(3);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function SoundBites(cellSize) {
+		var _this = this;
+
+		this.container = document.createElement('div');
+		this.templates = [{ filename: 'note_e_op.mp3', color: 'blue', createN: 2 }, { filename: 'note_c_op.mp3', color: 'red', createN: 2 }, { filename: 'note_b_op.mp3', color: 'green', createN: 2 }];
+
+		this.bites = function () {
+			var els = [];
+
+			_this.templates.map(function (temp) {
+				for (var i = 0; i < temp.createN; i++) {
+
+					var styleProps = {
+						top: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
+						left: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
+						position: 'absolute',
+						height: _helpers2.default.toPixels(cellSize),
+						width: _helpers2.default.toPixels(cellSize),
+						backgroundColor: temp.color
+					};
+
+					var el = document.createElement('div'),
+					    bite = {};
+
+					el.className = 'soundbite';
+
+					el.id = 'sound' + i.toString();
+
+					bite.filename = temp.filename;
+					bite.isDocked = false;
+					bite.cellIndex = null;
+					bite.size = cellSize;
+					bite.beganWithMouseDown = false;
+
+					_helpers2.default.setStyle(el, styleProps);
+
+					_this.container.appendChild(el);
+
+					el.bite = bite;
+
+					els.push(el);
+				}
+			});
+			return els;
+		}();
+
+		// add bites to the document
+
+		document.body.appendChild(this.container);
+	}
+
+	SoundBites.prototype = {
+		constructor: SoundBites,
+
+		setSelectedStyle: function setSelectedStyle(el) {
+			console.log('would set selected style');
+		},
+		setUnselectedStyle: function setUnselectedStyle(el) {
+			console.log('would set unselected style');
+		},
+
+
+		setPosition: function setPosition(el, pos) {
+			_helpers2.default.setStyle(el, {
+				position: 'fixed',
+				top: _helpers2.default.toPixels(pos.top),
+				left: _helpers2.default.toPixels(pos.left),
+				transform: 'none'
+			});
+			el.setAttribute('data-x', 0);
+			el.setAttribute('data-y', 0);
+		},
+
+		sendToBackground: function sendToBackground(bites) {
+			bites.map(function (bite) {
+				_helpers2.default.setStyle(bite, { zIndex: '1' });
+			});
+		},
+
+		bringToForeground: function bringToForeground(bites) {
+			bites.map(function (bite) {
+				_helpers2.default.setStyle(bite, { zIndex: '2' });
+			});
+		},
+
+		dragMoveListener: function dragMoveListener(e) {
+			var target = e.target,
+			    x = (parseFloat(target.getAttribute('data-x')) || 0) + e.dx,
+			    y = (parseFloat(target.getAttribute('data-y')) || 0) + e.dy;
+
+			target.style.webkitTransform = target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+
+			target.setAttribute('data-x', x);
+			target.setAttribute('data-y', y);
+		},
+
+		draggable: function draggable(e) {
+			_helpers2.default.setStyle(e.target, {
+				top: _helpers2.default.toPixels(e.clientY - Math.round(e.target.bite.size / 2)),
+				left: _helpers2.default.toPixels(e.clientX - Math.round(e.target.bite.size / 2))
+			});
+		},
+
+		getFileNames: function getFileNames() {
+			return this.bites.map(function (bite) {
+				return bite.bite.filename;
+			});
+		}
+	};
+
+	exports.default = SoundBites;
+
+/***/ },
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -6133,332 +6587,6 @@
 
 
 /***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _grid = __webpack_require__(5);
-
-	var _grid2 = _interopRequireDefault(_grid);
-
-	var _audiohandler = __webpack_require__(7);
-
-	var _audiohandler2 = _interopRequireDefault(_audiohandler);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function Sequencer() {
-		this.grid = new _grid2.default();
-		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
-		this.direction = 'col';
-		this.speed = 500;
-		this.loopId = null;
-		this.iteration = 0;
-
-		this.setupEventListeners();
-	}
-
-	Sequencer.prototype = {
-		constructor: Sequencer,
-
-		loop: function loop() {
-			var _this = this;
-
-			this.loopId = setInterval(function () {
-				var cells = _this.grid.getRowOrCol(_this.iteration, _this.direction);
-
-				_this.iteration++;
-
-				if (_this.iteration > _this.grid.dimensions[_this.direction + 's']) _this.iteration = 0;
-
-				if (cells.length > 0) {
-					for (var i = 0; i < cells.length; i++) {
-						_this.audio.playSound(cells[i].containedSound.bite.filename);
-					}
-				}
-			}, this.speed);
-		},
-
-		pause: function pause() {
-			clearInterval(this.loopId);
-		},
-
-		toggleDirection: function toggleDirection() {
-			this.pause();
-			if (this.direction === 'col') {
-				this.direction = 'row';
-			} else {
-				this.direction = 'col';
-			}
-			this.loop();
-		},
-
-		handleResize: function handleResize() {
-			this.grid.reposition();
-		},
-
-		setupEventListeners: function setupEventListeners() {
-			var _this2 = this;
-
-			window.addEventListener('resize', function () {
-				_this2.handleResize();
-			});
-		}
-	};
-
-	exports.default = Sequencer;
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _helpers = __webpack_require__(2);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	var _soundbites = __webpack_require__(6);
-
-	var _soundbites2 = _interopRequireDefault(_soundbites);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	var interact = __webpack_require__(3);
-
-	function Grid() {
-		var _this = this;
-
-		this.dimensions = { cellSize: 50, rows: 8, cols: 6 };
-
-		this.canvas = function () {
-			var canvas = document.createElement('canvas');
-
-			canvas.id = 'canvas';
-			canvas.width = _this.dimensions.cellSize * _this.dimensions.cols;
-			canvas.height = _this.dimensions.cellSize * _this.dimensions.rows;
-			canvas.style.zIndex = '-999';
-
-			document.body.appendChild(canvas);
-			return canvas;
-		}();
-
-		this.cells = function () {
-			var matrix = _helpers2.default.getMatrixRepresentation(_this.dimensions.rows, _this.dimensions.cols);
-
-			var cells = matrix.map(function (cell) {
-				return { top: 0, left: 0, row: cell.row, col: cell.col, isEmpty: true, containedSound: null };
-			});
-			return cells;
-		}();
-
-		this.sounds = new _soundbites2.default(this.dimensions.cellSize);
-
-		this.position = _helpers2.default.getElementCenterInViewport(this.canvas.width, this.canvas.height);
-
-		// position the canvas, set the cell boundaries, and raw the grid
-
-		this.reposition();
-		this.draw();
-
-		// configure event listeners
-
-		this.handleElements();
-	}
-
-	Grid.prototype = {
-		constructor: Grid,
-
-		draw: function draw() {
-			var _this2 = this;
-
-			this.cells.map(function (cell) {
-				var x = cell.col * _this2.dimensions.cellSize,
-				    y = cell.row * _this2.dimensions.cellSize,
-				    ctx = _this2.canvas.getContext('2d');
-
-				ctx.fillStyle = _helpers2.default.toRGB(20, 200, _helpers2.default.randInt(0, 255));
-				ctx.fillRect(x, y, _this2.dimensions.cellSize, _this2.dimensions.cellSize);
-			});
-		},
-
-		positionCanvas: function positionCanvas() {
-			this.position = _helpers2.default.getElementCenterInViewport(canvas.width, canvas.height);
-			_helpers2.default.setStyle(canvas, { left: _helpers2.default.toPixels(this.position.left),
-				top: _helpers2.default.toPixels(this.position.top),
-				position: 'absolute'
-			});
-		},
-
-		setCellBounds: function setCellBounds() {
-			var _this3 = this;
-
-			this.cells = this.cells.map(function (cell) {
-				var x = cell.col * _this3.dimensions.cellSize,
-				    y = cell.row * _this3.dimensions.cellSize,
-				    offsetX = _this3.position.left,
-				    offsetY = _this3.position.top;
-
-				cell.top = y + offsetY;
-				cell.left = x + offsetX;
-
-				return cell;
-			});
-		},
-
-		isWithinGrid: function isWithinGrid(position) {
-			var gridPosition = this.position;
-
-			gridPosition.right = gridPosition.left + canvas.width;
-			gridPosition.bottom = gridPosition.top + canvas.height;
-
-			//	pad calculation so that we still snap to the grid when at the grid edges
-
-			//	position is returned from getBoundingClientRect(), and must
-			//	be converted to a regular object first
-
-			var objPosition = {};
-
-			objPosition.left = position.left + this.dimensions.cellSize / 2;
-			objPosition.top = position.top + this.dimensions.cellSize / 2;
-
-			if (objPosition.left < gridPosition.left) return false;
-			if (objPosition.top < gridPosition.top) return false;
-			if (objPosition.left > gridPosition.right) return false;
-			if (objPosition.top > gridPosition.bottom) return false;
-
-			return true;
-		},
-
-		nearestCell: function nearestCell(el) {
-
-			var position = el.getBoundingClientRect();
-
-			if (!this.isWithinGrid(position)) return -1;
-
-			var cells = this.getEmptyCells();
-
-			var min = cells.reduce(function (offsets, cell, i) {
-				var x = Math.abs(position.left - cell.left),
-				    y = Math.abs(position.top - cell.top);
-
-				if (i === 0 || x <= offsets.x && y <= offsets.y) {
-					Object.assign(offsets, { x: x, y: y, row: cell.row, col: cell.col });
-				}
-				return offsets;
-			}, {});
-
-			return cells.filter(function (cell) {
-				return cell.row === min.row & cell.col === min.col;
-			})[0];
-		},
-
-		findCell: function findCell(closest) {
-			var index = this.cells.findIndex(function (cell) {
-				return closest.row === cell.row & closest.col === cell.col;
-			});
-			return index;
-		},
-
-		undock: function undock(el) {
-			if (el.bite.isDocked === false) return;
-
-			var index = el.bite.cellIndex;
-
-			this.cells[index].containedSound = null;
-			this.cells[index].isEmpty = true;
-		},
-
-		dock: function dock(el) {
-			var closest = this.nearestCell(el);
-
-			if (closest === -1) return;
-
-			var index = this.findCell(closest);
-
-			this.cells[index].containedSound = el;
-			this.cells[index].isEmpty = false;
-
-			el.bite.isDocked = true;
-			el.bite.cellIndex = index;
-
-			this.sounds.setPosition(el, closest);
-		},
-
-		getEmptyCells: function getEmptyCells() {
-			return this.cells.filter(function (cell) {
-				return cell.isEmpty === true;
-			});
-		},
-
-		getNonEmptyCells: function getNonEmptyCells() {
-			return this.cells.filter(function (cell) {
-				return cell.isEmpty === false;
-			});
-		},
-
-		getRowOrCol: function getRowOrCol(n, rowOrCol) {
-			return this.cells.filter(function (cell) {
-				return cell[rowOrCol] === n & !cell.isEmpty;
-			});
-		},
-
-		setContainedElementPositions: function setContainedElementPositions() {
-			var _this4 = this;
-
-			var cells = this.getNonEmptyCells();
-			if (cells.length === 0) return;
-			cells.map(function (cell) {
-				return _this4.sounds.setPosition(cell.containedSound, cell);
-			});
-		},
-
-		reposition: function reposition() {
-			this.positionCanvas();this.setCellBounds();this.setContainedElementPositions();
-		},
-
-		// configure handling of element pickup and release from grid
-
-		handleElements: function handleElements() {
-			var _this5 = this;
-
-			var bites = this.sounds.bites,
-			    ctx = this;
-
-			var elementPickup = function elementPickup(e) {
-				e.target.bite.beganWithMouseDown = true;
-				ctx.sounds.sendToBackground(bites);
-				ctx.sounds.bringToForeground([e.target]);
-				ctx.sounds.setSelectedStyle(e.target);
-				ctx.undock(e.target);
-			};
-
-			var elementRelease = function elementRelease(e) {
-				if (!e.target.bite.beganWithMouseDown) return;
-				e.target.bite.beganWithMouseDown = false;
-				ctx.sounds.bringToForeground(bites);
-				ctx.sounds.setUnselectedStyle(e.target);
-				_this5.dock(e.target);
-			};
-
-			for (var i = 0; i < bites.length; i++) {
-				var drag = interact(bites[i]).on('down', elementPickup).draggable({ enabled: true, onmove: this.sounds.dragMoveListener }).on('up', elementRelease);
-			}
-		}
-	};
-
-	exports.default = Grid;
-
-/***/ },
 /* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -6468,135 +6596,7 @@
 		value: true
 	});
 
-	var _helpers = __webpack_require__(2);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function SoundBites(cellSize) {
-		var _this = this;
-
-		this.container = document.createElement('div');
-		this.templates = [{ filename: 'note_e_op.mp3', color: 'blue', createN: 2 }, { filename: 'note_c_op.mp3', color: 'red', createN: 2 }, { filename: 'note_b_op.mp3', color: 'green', createN: 2 }];
-
-		this.bites = function () {
-			var els = [];
-
-			_this.templates.map(function (temp) {
-				for (var i = 0; i < temp.createN; i++) {
-
-					var styleProps = {
-						top: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
-						left: _helpers2.default.toPixels(_helpers2.default.randInt(0, 300)),
-						position: 'absolute',
-						height: _helpers2.default.toPixels(cellSize),
-						width: _helpers2.default.toPixels(cellSize),
-						backgroundColor: temp.color
-					};
-
-					var el = document.createElement('div'),
-					    bite = {};
-
-					el.className = 'soundbite';
-
-					el.id = 'sound' + i.toString();
-
-					bite.filename = temp.filename;
-					bite.isDocked = false;
-					bite.cellIndex = null;
-					bite.size = cellSize;
-					bite.beganWithMouseDown = false;
-
-					_helpers2.default.setStyle(el, styleProps);
-
-					_this.container.appendChild(el);
-
-					el.bite = bite;
-
-					els.push(el);
-				}
-			});
-			return els;
-		}();
-
-		// add bites to the document
-
-		document.body.appendChild(this.container);
-	}
-
-	SoundBites.prototype = {
-		constructor: SoundBites,
-
-		setSelectedStyle: function setSelectedStyle(el) {
-			console.log('would set selected style');
-		},
-		setUnselectedStyle: function setUnselectedStyle(el) {
-			console.log('would set unselected style');
-		},
-
-
-		setPosition: function setPosition(el, pos) {
-			_helpers2.default.setStyle(el, {
-				position: 'fixed',
-				top: _helpers2.default.toPixels(pos.top),
-				left: _helpers2.default.toPixels(pos.left),
-				transform: 'none'
-			});
-			el.setAttribute('data-x', 0);
-			el.setAttribute('data-y', 0);
-		},
-
-		sendToBackground: function sendToBackground(bites) {
-			bites.map(function (bite) {
-				_helpers2.default.setStyle(bite, { zIndex: '-1' });
-			});
-		},
-
-		bringToForeground: function bringToForeground(bites) {
-			bites.map(function (bite) {
-				_helpers2.default.setStyle(bite, { zIndex: '1' });
-			});
-		},
-
-		dragMoveListener: function dragMoveListener(e) {
-			var target = e.target,
-			    x = (parseFloat(target.getAttribute('data-x')) || 0) + e.dx,
-			    y = (parseFloat(target.getAttribute('data-y')) || 0) + e.dy;
-
-			target.style.webkitTransform = target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-
-			target.setAttribute('data-x', x);
-			target.setAttribute('data-y', y);
-		},
-
-		draggable: function draggable(e) {
-			_helpers2.default.setStyle(e.target, {
-				top: _helpers2.default.toPixels(e.clientY - Math.round(e.target.bite.size / 2)),
-				left: _helpers2.default.toPixels(e.clientX - Math.round(e.target.bite.size / 2))
-			});
-		},
-
-		getFileNames: function getFileNames() {
-			return this.bites.map(function (bite) {
-				return bite.bite.filename;
-			});
-		}
-	};
-
-	exports.default = SoundBites;
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _helpers = __webpack_require__(2);
+	var _helpers = __webpack_require__(3);
 
 	var _helpers2 = _interopRequireDefault(_helpers);
 

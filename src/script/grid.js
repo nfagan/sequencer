@@ -11,7 +11,8 @@ function Grid() {
 		canvas.id = 'canvas'
 		canvas.width = this.dimensions.cellSize * this.dimensions.cols
 		canvas.height = this.dimensions.cellSize * this.dimensions.rows
-		canvas.style.zIndex = '-999'
+		canvas.style.position = 'fixed'
+		canvas.style.zIndex = '0'
 
 		document.body.appendChild(canvas)
 		return canvas

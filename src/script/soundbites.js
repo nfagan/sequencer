@@ -73,11 +73,11 @@ SoundBites.prototype = {
 	},
 
 	sendToBackground: function(bites) {
-		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '-1' })})
+		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '1' })})
 	},
 
 	bringToForeground: function(bites) { 
-		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '1' })})
+		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '2' })})
 	},
 
 	dragMoveListener: function(e) {
