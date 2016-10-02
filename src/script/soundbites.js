@@ -117,13 +117,36 @@ SoundBites.prototype = {
 	},
 
 	animateElementPopIn: function(el) {
-		let tl = new TimelineMax(),
-			originalColor = el.bite.color
 
-		tl.to(el, .4, { css: { 'backgroundColor': 'black' } })
-			.to(el, .4, { css: { 'backgroundColor': originalColor } })
+		let circle = document.createElement('div')
+		console.log(el.style.top)
+			Helpers.setStyle(circle,
+			{
+				position: 'fixed',
+				top: el.style.top, 
+				left: el.style.left,
+				borderRadius: '50%',
+				borderWidth: 'thick',
+				borderColor: 'black',
+				opacity: '1',
+				backgroundColor: 'gray',
+				height: el.style.height,
+				width: el.style.width
+			})
 
-		el.bite.timeline = tl
+		document.body.appendChild(circle)
+
+		let tl = new TimelineMax()
+		tl.to(circle, .4, { css: { 'transform': 'scale(2,2)', 'opacity': '0' } })
+		setTimeout( () => document.body.removeChild(circle),400)
+
+		// let tl = new TimelineMax(),
+		// 	originalColor = el.bite.color
+
+		// tl.to(el, .4, { css: { 'backgroundColor': 'black' } })
+		// 	.to(el, .4, { css: { 'backgroundColor': originalColor } })
+
+		// el.bite.timeline = tl
 	},
 
 	setSelectedStyle(el) {

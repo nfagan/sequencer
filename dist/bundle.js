@@ -268,6 +268,12 @@
 			button.addEventListener('click', function () {
 				_this4.grid.socketHandler.togglePublicInput();
 				_this4.addSelectedClass(button);
+
+				if (!_this4.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE) {
+					document.body.style.backgroundColor = '#CCC8C8';
+				} else {
+					document.body.style.backgroundColor = 'white';
+				}
 			});
 		},
 
@@ -864,12 +870,37 @@
 		},
 
 		animateElementPopIn: function animateElementPopIn(el) {
-			var tl = new TimelineMax(),
-			    originalColor = el.bite.color;
 
-			tl.to(el, .4, { css: { 'backgroundColor': 'black' } }).to(el, .4, { css: { 'backgroundColor': originalColor } });
+			var circle = document.createElement('div');
+			console.log(el.style.top);
+			_helpers2.default.setStyle(circle, {
+				position: 'fixed',
+				top: el.style.top,
+				left: el.style.left,
+				borderRadius: '50%',
+				borderWidth: 'thick',
+				borderColor: 'black',
+				opacity: '1',
+				backgroundColor: 'gray',
+				height: el.style.height,
+				width: el.style.width
+			});
 
-			el.bite.timeline = tl;
+			document.body.appendChild(circle);
+
+			var tl = new TimelineMax();
+			tl.to(circle, .4, { css: { 'transform': 'scale(2,2)', 'opacity': '0' } });
+			setTimeout(function () {
+				return document.body.removeChild(circle);
+			}, 400);
+
+			// let tl = new TimelineMax(),
+			// 	originalColor = el.bite.color
+
+			// tl.to(el, .4, { css: { 'backgroundColor': 'black' } })
+			// 	.to(el, .4, { css: { 'backgroundColor': originalColor } })
+
+			// el.bite.timeline = tl
 		},
 
 		setSelectedStyle: function setSelectedStyle(el) {

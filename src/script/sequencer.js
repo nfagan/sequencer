@@ -175,6 +175,12 @@ Sequencer.prototype = {
 		button.addEventListener('click', () => {
 			this.grid.socketHandler.togglePublicInput()
 			this.addSelectedClass(button)
+
+			if (!this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE) {
+				document.body.style.backgroundColor = '#CCC8C8'
+			} else {
+				document.body.style.backgroundColor = 'white'
+			}
 		})
 	},
 
