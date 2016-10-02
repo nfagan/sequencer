@@ -4,13 +4,14 @@ const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 function SoundBites(cellSize) {
 	this.container = document.createElement('div')
 	this.templates = [
-		{filename: 'note_e_op.mp3', color: 'blue', createN: 2 },
-		{filename: 'note_c_op.mp3', color: 'red', createN: 2 },
-		{filename: 'note_b_op.mp3', color: 'green', createN: 2 }
+		{ filename: 'note_e_op.mp3', color: 'blue', createN: 2 },
+		{ filename: 'note_c_op.mp3', color: 'red', createN: 2 },
+		{ filename: 'note_b_op.mp3', color: 'green', createN: 2 }
 	]
 
 	this.bites = ( () => {
-		let els = []
+		let els = [],
+			count = 0
 
 		this.templates.map( (temp) => {
 			for (let i=0;i<temp.createN;i++) {
@@ -30,7 +31,7 @@ function SoundBites(cellSize) {
 
 				el.className = 'soundbite'
 
-				el.id = 'sound' + i.toString()
+				el.id = 'sound' + count.toString()
 
 				bite.filename = temp.filename
 				bite.color = temp.color
@@ -46,6 +47,8 @@ function SoundBites(cellSize) {
 				el.bite = bite
 
 				els.push(el)
+
+				count++
 			}
 		})
 	return els
@@ -58,10 +61,6 @@ function SoundBites(cellSize) {
 
 SoundBites.prototype = {
 	constructor: SoundBites,
-
-	setSelectedStyle(el) { console.log('would set selected style') },
-
-	setUnselectedStyle(el) { console.log('would set unselected style') },
 
 	setPosition: function(el,pos) {
 		Helpers.setStyle(el,
@@ -100,7 +99,7 @@ SoundBites.prototype = {
 		return this.bites.map( (bite) => { return bite.bite.filename })
 	},
 
-	clearTimeline: function(el) {
+	clearPlayingAnimation: function(el) {
 		if (!el.bite.timeline) return;
 		el.bite.timeline.seek(0)
 		el.bite.timeline.kill()
@@ -110,11 +109,29 @@ SoundBites.prototype = {
 		let tl = new TimelineMax(),
 			originalColor = el.bite.color
 
-		tl.to(el,.4,{ css: { 'transform': 'scale(1.1,1.1)', 'backgroundColor': 'white' } })
-			.to(el,.4,{ css: { 'transform': 'scale(1,1)', 'backgroundColor': originalColor } })
+		tl.to(el, .4, { css: { 'transform': 'scale(1.1,1.1)', 'backgroundColor': 'white' } })
+			.to(el, .4, { css: { 'transform': 'scale(1,1)', 'backgroundColor': originalColor } })
 
 		el.bite.timeline = tl
-	}
+	},
+
+	animateElementPopIn: function(el) {
+		let tl = new TimelineMax(),
+			originalColor = el.bite.color
+
+		tl.to(el, .4, { css: { 'backgroundColor': 'black' } })
+			.to(el, .4, { css: { 'backgroundColor': originalColor } })
+
+		el.bite.timeline = tl
+	},
+
+	setSelectedStyle(el) {
+		tween.to(el, .1, { height: el.bite.size*1.15, width: el.bite.size*1.15 })
+	},
+
+	setUnselectedStyle(el) { 
+		tween.to(el, .1, { height: el.bite.size, width: el.bite.size })
+	},
 }
 
 export default SoundBites

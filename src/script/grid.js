@@ -1,10 +1,13 @@
 import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
+import SocketHandler from './sockethandler.js'
 const interact = require('interact.js')
 const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
 function Grid(dimensions) {
 	this.dimensions = dimensions
+
+	this.socketHandler = new SocketHandler(this)
 
 	this.canvas = ( () => {
 		let canvas = document.createElement('canvas')
@@ -131,6 +134,11 @@ Grid.prototype = {
 		return index
 	},
 
+	getCell: function(element) {
+		let index = this.findCell(element)
+		return this.cells[index]
+	},
+
 	undock: function(el) {
 		if (el.bite.isDocked === false) return;
 
@@ -140,7 +148,15 @@ Grid.prototype = {
 		this.cells[index].isEmpty = true
 	},
 
-	dock: function(el) {
+	dock: function(el,props) {
+		let defaults = { emit: true }
+
+		if (props) {
+			props = Object.assign(defaults,props)
+		} else {
+			props = defaults
+		}
+
 		let closest = this.nearestCell(el)
 
 		if (closest === -1) return;
@@ -154,6 +170,20 @@ Grid.prototype = {
 		el.bite.cellIndex = index
 
 		this.sounds.setPosition(el,closest)
+
+		// don't emit if the emitter source is the current client
+
+		if (!props.emit) return;
+
+		let row = this.cells[index].row,
+			col = this.cells[index].col
+
+		this.socketHandler.socket.emit('soundWasDocked',{
+			soundId: el.id, 
+			row: row,
+			col: col,
+			socketClientId: this.socketHandler.SOCKET_CLIENT_ID
+		})
 	},
 
 	getEmptyCells: function() {
@@ -168,14 +198,19 @@ Grid.prototype = {
 		return this.cells.filter( (cell) => { return cell[rowOrCol] === n & !cell.isEmpty })
 	},
 
+	getSoundById: function(id) {
+		return this.sounds.bites.filter( (sound) => sound.id === id)
+	},
+
 	setContainedElementPositions: function() {
 		let cells = this.getNonEmptyCells()
 		if (cells.length === 0) return;
 		cells.map( (cell) => this.sounds.setPosition(cell.containedSound,cell))
 	},
 
-	checkIfEmpty: function(index) {
-		return this.cells[index].isEmpty
+	cellIsEmpty: function(row,col) {
+		if ((row > this.dimensions.row) || (col > this.dimensions.col)) return null;
+		return this.cells.filter( (cell) => cell.row === row & cell.col === col )[0].isEmpty
 	},
 
 	reposition: function() { this.positionCanvas(); this.setCellBounds(); this.setContainedElementPositions(); },
@@ -187,7 +222,7 @@ Grid.prototype = {
 			ctx = this
 
 		const elementPickup = (e) => {
-			ctx.sounds.clearTimeline(e.target);
+			ctx.sounds.clearPlayingAnimation(e.target);
 			e.target.bite.beganWithMouseDown = true
 			ctx.sounds.sendToBackground(bites)
 			ctx.sounds.bringToForeground([e.target])

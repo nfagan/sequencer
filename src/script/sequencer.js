@@ -27,7 +27,7 @@ Sequencer.prototype = {
 	defineGridSize: function() {
 		let h = window.innerHeight
 		if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
-		return { cellSize: 50, rows: 8, cols: 6 }
+		return { cellSize: 50, rows: 6, cols: 6 }
 	},
 
 	loop: function() {
@@ -170,6 +170,14 @@ Sequencer.prototype = {
 		})
 	},
 
+	handlePrivateButton: function() {
+		let button = document.querySelector('#private')
+		button.addEventListener('click', () => {
+			this.grid.socketHandler.togglePublicInput()
+			this.addSelectedClass(button)
+		})
+	},
+
 	handleBPMIncreaseButton: function() {
 		let button = document.querySelector('#plus')
 		button.addEventListener('click', () => {
@@ -199,6 +207,7 @@ Sequencer.prototype = {
 		this.handleDirectionButton()
 		this.handleBPMIncreaseButton()
 		this.handlBPMDecreaseButton()
+		this.handlePrivateButton()
 	},
 
 	addSelectedClass: function(el) {
