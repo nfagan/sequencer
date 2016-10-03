@@ -31,4 +31,8 @@ html, body {
   .controls p.--selected {
     transform: scale(0.9, 0.9); }
 
+@media (max-height: 600px) {
+  .controls p {
+    font-size: 2.5rem; } }
+
 /*# sourceMappingURL=main.css.map */
