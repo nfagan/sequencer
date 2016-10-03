@@ -4,9 +4,11 @@ const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 function SoundBites(cellSize) {
 	this.container = document.createElement('div')
 	this.templates = [
-		{ filename: 'note_e_op.mp3', color: 'blue', createN: 2 },
-		{ filename: 'note_c_op.mp3', color: 'red', createN: 2 },
-		{ filename: 'note_b_op.mp3', color: 'green', createN: 2 }
+		{ filename: 'note_e_op.mp3', color: 'teal', createN: 2 },
+		{ filename: 'note_c_op.mp3', color: '#28FA91', createN: 2 },
+		{ filename: 'note_g_op.mp3', color: '#6E77F5', createN: 2 },
+		{ filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 },
+		{ filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 2 }
 	]
 
 	this.bites = ( () => {
@@ -139,14 +141,6 @@ SoundBites.prototype = {
 		let tl = new TimelineMax()
 		tl.to(circle, .4, { css: { 'transform': 'scale(2,2)', 'opacity': '0' } })
 		setTimeout( () => document.body.removeChild(circle),400)
-
-		// let tl = new TimelineMax(),
-		// 	originalColor = el.bite.color
-
-		// tl.to(el, .4, { css: { 'backgroundColor': 'black' } })
-		// 	.to(el, .4, { css: { 'backgroundColor': originalColor } })
-
-		// el.bite.timeline = tl
 	},
 
 	setSelectedStyle(el) {
