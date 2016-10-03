@@ -144,11 +144,15 @@ Sequencer.prototype = {
 			bpmContainer = document.querySelector('.bpmContainer'),
 			height = parseFloat(window.getComputedStyle(controls[0]).getPropertyValue('height')),
 			gridTop = this.grid.position.top,
-			gridHeight = this.grid.canvas.height
+			gridHeight = this.grid.canvas.height,
+			halfTop = gridTop/2 - height/2,
+			absoluteTop = gridTop - 85,
+			setTop = Helpers.max([halfTop, absoluteTop])
 
+		Helpers.setStyle(container, { top: Helpers.toPixels(setTop) })
 		// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
 		// Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
-		Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop - 85) })
+		// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop - 85) })
 		Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + 20) })
 	},
 

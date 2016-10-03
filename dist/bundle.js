@@ -229,11 +229,15 @@
 			    bpmContainer = document.querySelector('.bpmContainer'),
 			    height = parseFloat(window.getComputedStyle(controls[0]).getPropertyValue('height')),
 			    gridTop = this.grid.position.top,
-			    gridHeight = this.grid.canvas.height;
+			    gridHeight = this.grid.canvas.height,
+			    halfTop = gridTop / 2 - height / 2,
+			    absoluteTop = gridTop - 85,
+			    setTop = _helpers2.default.max([halfTop, absoluteTop]);
 
+			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(setTop) });
 			// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
 			// Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
-			_helpers2.default.setStyle(container, { top: _helpers2.default.toPixels(gridTop - 85) });
+			// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop - 85) })
 			_helpers2.default.setStyle(bpmContainer, { top: _helpers2.default.toPixels(gridTop + gridHeight + 20) });
 		},
 
