@@ -111,7 +111,7 @@
 		defineGridSize: function defineGridSize() {
 			var h = window.innerHeight;
 			if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
-			return { cellSize: 50, rows: 6, cols: 6 };
+			return { cellSize: 50, rows: 7, cols: 6 };
 		},
 
 		loop: function loop() {
