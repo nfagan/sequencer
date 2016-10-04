@@ -7,7 +7,7 @@ function Sequencer() {
 	this.grid = new Grid(this.defineGridSize())
 	this.audio = new AudioHandler(this.grid.sounds.getFileNames())
 	this.direction = 'col'
-	this.speed = 500
+	this.speed = 400
 	this.minSpeed = 100
 	this.maxSpeed = 800
 	this.speedStep = 50

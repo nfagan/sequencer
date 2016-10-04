@@ -160,7 +160,14 @@ Grid.prototype = {
 
 		let closest = this.nearestCell(el)
 
-		if (closest === -1) return;
+		if (closest === -1) {
+			this.sounds.animateRestingElement(el)
+			return
+		}
+
+		//	now that the element is docked, stop playing the animation
+
+		this.sounds.clearRestingAnimation(el)
 		
 		let index = this.findCell(closest)
 
@@ -224,6 +231,7 @@ Grid.prototype = {
 
 		const elementPickup = (e) => {
 			ctx.sounds.clearPlayingAnimation(e.target)
+			ctx.sounds.clearRestingAnimation(e.target)
 			e.target.bite.beganWithMouseDown = true
 			e.target.bite.isSelected = true
 			ctx.sounds.sendToBackground(bites)

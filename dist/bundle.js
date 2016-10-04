@@ -72,7 +72,7 @@
 
 	var _grid2 = _interopRequireDefault(_grid);
 
-	var _audiohandler = __webpack_require__(57);
+	var _audiohandler = __webpack_require__(56);
 
 	var _audiohandler2 = _interopRequireDefault(_audiohandler);
 
@@ -82,13 +82,13 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var interact = __webpack_require__(56);
+	var interact = __webpack_require__(57);
 
 	function Sequencer() {
 		this.grid = new _grid2.default(this.defineGridSize());
 		this.audio = new _audiohandler2.default(this.grid.sounds.getFileNames());
 		this.direction = 'col';
-		this.speed = 500;
+		this.speed = 400;
 		this.minSpeed = 100;
 		this.maxSpeed = 800;
 		this.speedStep = 50;
@@ -357,13 +357,13 @@
 
 	var _sockethandler2 = _interopRequireDefault(_sockethandler);
 
-	var _audiohandler = __webpack_require__(57);
+	var _audiohandler = __webpack_require__(56);
 
 	var _audiohandler2 = _interopRequireDefault(_audiohandler);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var interact = __webpack_require__(56);
+	var interact = __webpack_require__(57);
 	var tween = __webpack_require__(5);
 
 	function Grid(dimensions) {
@@ -528,7 +528,14 @@
 
 			var closest = this.nearestCell(el);
 
-			if (closest === -1) return;
+			if (closest === -1) {
+				this.sounds.animateRestingElement(el);
+				return;
+			}
+
+			//	now that the element is docked, stop playing the animation
+
+			this.sounds.clearRestingAnimation(el);
 
 			var index = this.findCell(closest);
 
@@ -610,6 +617,7 @@
 
 			var elementPickup = function elementPickup(e) {
 				ctx.sounds.clearPlayingAnimation(e.target);
+				ctx.sounds.clearRestingAnimation(e.target);
 				e.target.bite.beganWithMouseDown = true;
 				e.target.bite.isSelected = true;
 				ctx.sounds.sendToBackground(bites);
@@ -745,11 +753,12 @@
 		var _this = this;
 
 		this.container = document.createElement('div');
-		this.templates = [{ filename: 'note_e_op.mp3', color: 'teal', createN: 2 }, { filename: 'note_c_op.mp3', color: '#28FA91', createN: 2 }, { filename: 'note_g_op.mp3', color: '#6E77F5', createN: 2 }, { filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 }, { filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 2 }];
+		this.templates = [{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 }, { filename: 'perc_moondog.mp3', color: '#28FA91', createN: 1 }, { filename: 'perc_shaker.mp3', color: '#6E77F5', createN: 1 }, { filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 }, { filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 1 }, { filename: 'perc_woodblock_low.mp3', color: '#2828FA', createN: 1 }, { filename: 'between_friends_hi.mp3', color: 'red', createN: 1 }, { filename: 'between_friends.mp3', color: '#B428FA', createN: 1 }, { filename: 'note_c.mp3', color: '#28D7FA', createN: 2 }, { filename: 'note_e.mp3', color: '#B2F56E', createN: 2 }, { filename: 'note_a.mp3', color: 'gray', createN: 2 }, { filename: 'note_g.mp3', color: '#D5BAFF', createN: 2 }, { filename: 'celeste_piano_c_e.mp3', color: '#F09D69', createN: 1 }, { filename: 'celeste_piano_c.mp3', color: '#F09D69', createN: 1 }, { filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }];
 
 		this.bites = function () {
 			var els = [],
-			    count = 0;
+			    count = 0,
+			    windowHeight = Math.round(window.innerHeight);
 
 			_this.templates.map(function (temp) {
 				for (var i = 0; i < temp.createN; i++) {
@@ -784,6 +793,8 @@
 					_this.container.appendChild(el);
 
 					el.bite = bite;
+
+					_this.animateRestingElement(el);
 
 					els.push(el);
 
@@ -887,6 +898,18 @@
 		},
 		setUnselectedStyle: function setUnselectedStyle(el) {
 			tween.to(el, .1, { height: el.bite.size, width: el.bite.size });
+		},
+		animateRestingElement: function animateRestingElement(el) {
+			var anim = new TimelineMax(),
+			    amt = _helpers2.default.randInt(1, 8),
+			    expression = '+=.' + amt.toString();
+
+			anim.to(el, .5, { css: { 'borderRadius': '20%' }, yoyo: true, repeat: -1 }, expression);
+			el.bite.playingAnimation = anim;
+		},
+		clearRestingAnimation: function clearRestingAnimation(el) {
+			el.bite.playingAnimation.seek(0);
+			el.bite.playingAnimation.kill();
 		}
 	};
 
@@ -8466,6 +8489,94 @@
 /* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _helpers = __webpack_require__(3);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function AudioHandler(filenames) {
+		var AudioContext = window.AudioContext || window.webkitAudioContext;
+
+		filenames = _helpers2.default.uniques(filenames);
+
+		this.filenames = [];
+		this.sounds = [];
+		this.context = new AudioContext();
+		this.loadSounds(filenames);
+		this.playedDummySound = false; //	hack to make audio work in iOS
+	}
+
+	AudioHandler.prototype = {
+
+		constructor: AudioHandler,
+
+		loadSounds: function loadSounds(files) {
+			var _this = this;
+
+			files.map(function (file) {
+				_this.loadSound(file);
+				_this.filenames.push(file);
+			});
+		},
+
+		loadSound: function loadSound(filename) {
+			var _this2 = this;
+
+			if (this.filenames.indexOf(filename) !== -1) return;
+
+			var request = new XMLHttpRequest(),
+			    fullfile = '/sequencer/sounds/' + filename;
+
+			request.open('GET', fullfile);
+			request.responseType = 'arraybuffer';
+
+			request.onload = function () {
+				_this2.context.decodeAudioData(request.response, function (buffer) {
+					_this2.sounds.push(buffer);
+				});
+			};
+
+			request.send();
+		},
+
+		playSound: function playSound(id) {
+			var source = this.context.createBufferSource(),
+			    index = this.filenames.indexOf(id);
+
+			source.buffer = this.sounds[index];
+			source.connect(this.context.destination);
+			source.start(0);
+		},
+
+		playDummySound: function playDummySound() {
+			if (this.playedDummySound) return;
+
+			var buffer = this.context.createBuffer(1, 1, 22050),
+			    source = this.context.createBufferSource();
+
+			source.buffer = buffer;
+			source.connect(this.context.destination);
+			source.start(0);
+
+			this.playedDummySound = true;
+
+			console.log('played dummy sound');
+		}
+	};
+
+	exports.default = AudioHandler;
+
+/***/ },
+/* 57 */
+/***/ function(module, exports, __webpack_require__) {
+
 	/**
 	 * interact.js v1.2.6
 	 *
@@ -14443,94 +14554,6 @@
 
 	} (typeof window === 'undefined'? undefined : window));
 
-
-/***/ },
-/* 57 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _helpers = __webpack_require__(3);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function AudioHandler(filenames) {
-		var AudioContext = window.AudioContext || window.webkitAudioContext;
-
-		filenames = _helpers2.default.uniques(filenames);
-
-		this.filenames = [];
-		this.sounds = [];
-		this.context = new AudioContext();
-		this.loadSounds(filenames);
-		this.playedDummySound = false; //	hack to make audio work in iOS
-	}
-
-	AudioHandler.prototype = {
-
-		constructor: AudioHandler,
-
-		loadSounds: function loadSounds(files) {
-			var _this = this;
-
-			files.map(function (file) {
-				_this.loadSound(file);
-				_this.filenames.push(file);
-			});
-		},
-
-		loadSound: function loadSound(filename) {
-			var _this2 = this;
-
-			if (this.filenames.indexOf(filename) !== -1) return;
-
-			var request = new XMLHttpRequest(),
-			    fullfile = '/sequencer/sounds/' + filename;
-
-			request.open('GET', fullfile);
-			request.responseType = 'arraybuffer';
-
-			request.onload = function () {
-				_this2.context.decodeAudioData(request.response, function (buffer) {
-					_this2.sounds.push(buffer);
-				});
-			};
-
-			request.send();
-		},
-
-		playSound: function playSound(id) {
-			var source = this.context.createBufferSource(),
-			    index = this.filenames.indexOf(id);
-
-			source.buffer = this.sounds[index];
-			source.connect(this.context.destination);
-			source.start(0);
-		},
-
-		playDummySound: function playDummySound() {
-			if (this.playedDummySound) return;
-
-			var buffer = this.context.createBuffer(1, 1, 22050),
-			    source = this.context.createBufferSource();
-
-			source.buffer = buffer;
-			source.connect(this.context.destination);
-			source.start(0);
-
-			this.playedDummySound = true;
-
-			console.log('played dummy sound');
-		}
-	};
-
-	exports.default = AudioHandler;
 
 /***/ }
 /******/ ]);

@@ -4,16 +4,27 @@ const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 function SoundBites(cellSize) {
 	this.container = document.createElement('div')
 	this.templates = [
-		{ filename: 'note_e_op.mp3', color: 'teal', createN: 2 },
-		{ filename: 'note_c_op.mp3', color: '#28FA91', createN: 2 },
-		{ filename: 'note_g_op.mp3', color: '#6E77F5', createN: 2 },
+		{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 },
+		{ filename: 'perc_moondog.mp3', color: '#28FA91', createN: 1 },
+		{ filename: 'perc_shaker.mp3', color: '#6E77F5', createN: 1 },
 		{ filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 },
-		{ filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 2 }
+		{ filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 1 },
+		{ filename: 'perc_woodblock_low.mp3', color: '#2828FA', createN: 1 },
+		{ filename: 'between_friends_hi.mp3', color: 'red', createN: 1 },
+		{ filename: 'between_friends.mp3', color: '#B428FA', createN: 1 },
+		{ filename: 'note_c.mp3', color: '#28D7FA', createN: 2 },
+		{ filename: 'note_e.mp3', color: '#B2F56E', createN: 2 },
+		{ filename: 'note_a.mp3', color: 'gray', createN: 2 },
+		{ filename: 'note_g.mp3', color: '#D5BAFF', createN: 2 },
+		{ filename: 'celeste_piano_c_e.mp3', color: '#F09D69', createN: 1 },
+		{ filename: 'celeste_piano_c.mp3', color: '#F09D69', createN: 1 },
+		{ filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }
 	]
 
 	this.bites = ( () => {
 		let els = [],
-			count = 0
+			count = 0,
+			windowHeight = Math.round(window.innerHeight)
 
 		this.templates.map( (temp) => {
 			for (let i=0;i<temp.createN;i++) {
@@ -48,6 +59,8 @@ function SoundBites(cellSize) {
 				this.container.appendChild(el)
 
 				el.bite = bite
+
+				this.animateRestingElement(el)
 
 				els.push(el)
 
@@ -150,6 +163,20 @@ SoundBites.prototype = {
 	setUnselectedStyle(el) { 
 		tween.to(el, .1, { height: el.bite.size, width: el.bite.size })
 	},
+
+	animateRestingElement(el) {
+		let anim = new TimelineMax(),
+			amt = Helpers.randInt(1,8),
+			expression = '+=.' + amt.toString()
+
+		anim.to(el,.5,{ css: { 'borderRadius': '20%' }, yoyo: true, repeat: -1 },expression)
+		el.bite.playingAnimation = anim
+	},
+
+	clearRestingAnimation(el) {
+		el.bite.playingAnimation.seek(0)
+		el.bite.playingAnimation.kill()
+	}
 }
 
 export default SoundBites
