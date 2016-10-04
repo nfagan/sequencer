@@ -9,6 +9,7 @@ function AudioHandler(filenames) {
 	this.sounds = []
 	this.context = new AudioContext()
 	this.loadSounds(filenames)
+	this.playedDummySound = false	//	hack to make audio work in iOS
 }
 
 AudioHandler.prototype = {
@@ -47,6 +48,21 @@ AudioHandler.prototype = {
 		source.buffer = this.sounds[index]
 		source.connect(this.context.destination)
 		source.start(0)
+	},
+
+	playDummySound: function() {
+		if (this.playedDummySound) return;
+
+		let buffer = this.context.createBuffer(1,1,22050),
+			source = this.context.createBufferSource()
+
+		source.buffer = buffer
+		source.connect(this.context.destination)
+		source.start(0)
+
+		this.playedDummySound = true
+
+		console.log('played dummy sound')
 	}
 }
 

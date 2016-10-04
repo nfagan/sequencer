@@ -1,6 +1,7 @@
 import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
 import SocketHandler from './sockethandler.js'
+import AudioHandler from './audiohandler.js'
 const interact = require('interact.js')
 const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
@@ -222,7 +223,7 @@ Grid.prototype = {
 			ctx = this
 
 		const elementPickup = (e) => {
-			ctx.sounds.clearPlayingAnimation(e.target);
+			ctx.sounds.clearPlayingAnimation(e.target)
 			e.target.bite.beganWithMouseDown = true
 			e.target.bite.isSelected = true
 			ctx.sounds.sendToBackground(bites)

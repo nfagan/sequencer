@@ -48,12 +48,10 @@ SocketHandler.prototype = {
 			(this.otherClientIds.length === this.N_CONCURRENT_CLIENTS) ||
 			(this.isACurrentOtherClientId(id)))
 		{
-			console.log('rejecting public input')
 			return
 		}
 
 		this.otherClientIds.push(id)
-		console.log('other ids are',this.otherClientIds)
 	},
 
 	soundWasDocked: function(sound) {

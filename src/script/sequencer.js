@@ -227,28 +227,8 @@ Sequencer.prototype = {
 	},
 
 	playDummySound: function() {
-
-		// TODO: change the target of the event listener to something
-		// that ios recognizes as a valid trigger
-
 		let ctx = this
-
-		const dummySound = () => {
-			let buffer = ctx.audio.context.createBuffer(1,1,22050),
-				source = ctx.audio.context.createBufferSource()
-
-			source.buffer = buffer
-			source.connect(ctx.audio.context.destination)
-			source.start(0)
-		}
-
-		if (this.playedDummySound) {
-			this.grid.sounds.container.removeEventListener('mousedown',dummySound) 
-			return
-		}
-
-		this.grid.sounds.container.addEventListener('mousedown',dummySound)
-		this.playedDummySound = true
+		ctx.grid.canvas.addEventListener('click',() => ctx.audio.playDummySound() )
 	}
 
 }
