@@ -3,6 +3,7 @@ const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
 function SoundBites(cellSize) {
 	this.container = document.createElement('div')
+	this.cellSize = cellSize
 	this.templates = [
 		{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 },
 		{ filename: 'perc_moondog.mp3', color: '#28FA91', createN: 1 },
@@ -21,20 +22,30 @@ function SoundBites(cellSize) {
 		{ filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }
 	]
 
-	this.bites = ( () => {
-		let els = [],
-			count = 0,
+	this.bites = []
+	this.createBites(this.templates)
+
+	// add bites to the document
+
+	document.body.appendChild(this.container)
+}
+
+SoundBites.prototype = {
+	constructor: SoundBites,
+
+	createBites: function(templates) {
+		let count = this.bites.length,
 			windowHeight = Math.round(window.innerHeight)
 
-		this.templates.map( (temp) => {
+		templates.map( (temp) => {
 			for (let i=0;i<temp.createN;i++) {
 
 				let styleProps = {
 					top: Helpers.toPixels(Helpers.randInt(0,300)),
 					left: Helpers.toPixels(Helpers.randInt(0,300)),
 					position: 'absolute',
-					height: Helpers.toPixels(cellSize),
-					width: Helpers.toPixels(cellSize),
+					height: Helpers.toPixels(this.cellSize),
+					width: Helpers.toPixels(this.cellSize),
 					backgroundColor: temp.color,
 					zIndex: 1
 				}
@@ -50,7 +61,7 @@ function SoundBites(cellSize) {
 				bite.color = temp.color
 				bite.isDocked = false
 				bite.cellIndex = null
-				bite.size = cellSize
+				bite.size = this.cellSize
 				bite.beganWithMouseDown = false
 				bite.isSelected = false
 
@@ -62,21 +73,12 @@ function SoundBites(cellSize) {
 
 				this.animateRestingElement(el)
 
-				els.push(el)
+				this.bites.push(el)
 
 				count++
 			}
 		})
-	return els
-	})();
-
-	// add bites to the document
-
-	document.body.appendChild(this.container)
-}
-
-SoundBites.prototype = {
-	constructor: SoundBites,
+	},
 
 	setPosition: function(el,pos) {
 		Helpers.setStyle(el,
@@ -180,3 +182,53 @@ SoundBites.prototype = {
 }
 
 export default SoundBites
+
+
+	// this.bites = ( () => {
+	// 	let els = [],
+	// 		count = 0,
+	// 		windowHeight = Math.round(window.innerHeight)
+
+	// 	this.templates.map( (temp) => {
+	// 		for (let i=0;i<temp.createN;i++) {
+
+	// 			let styleProps = {
+	// 				top: Helpers.toPixels(Helpers.randInt(0,300)),
+	// 				left: Helpers.toPixels(Helpers.randInt(0,300)),
+	// 				position: 'absolute',
+	// 				height: Helpers.toPixels(cellSize),
+	// 				width: Helpers.toPixels(cellSize),
+	// 				backgroundColor: temp.color,
+	// 				zIndex: 1
+	// 			}
+
+	// 			let el = document.createElement('div'),
+	// 				bite = {}
+
+	// 			el.className = 'soundbite'
+
+	// 			el.id = 'sound' + count.toString()
+
+	// 			bite.filename = temp.filename
+	// 			bite.color = temp.color
+	// 			bite.isDocked = false
+	// 			bite.cellIndex = null
+	// 			bite.size = cellSize
+	// 			bite.beganWithMouseDown = false
+	// 			bite.isSelected = false
+
+	// 			Helpers.setStyle(el,styleProps)
+
+	// 			this.container.appendChild(el)
+
+	// 			el.bite = bite
+
+	// 			this.animateRestingElement(el)
+
+	// 			els.push(el)
+
+	// 			count++
+	// 		}
+	// 	})
+	// return els
+	// })();
