@@ -1,7 +1,15 @@
 import Grid from './grid.js'
 import AudioHandler from './audiohandler.js'
 import Helpers from './helpers.js'
-const interact = require('interact.js')
+
+
+/*
+
+	TODO:
+		-	only record audio if recording is supported
+		-	remove ability to record sound until testing has finished
+		-	remove ability to record if more than N number of sounds present
+*/
 
 function Sequencer() {
 	this.grid = new Grid(this.defineGridSize())
@@ -14,7 +22,9 @@ function Sequencer() {
 	this.loopId = null
 	this.iteration = 0
 	this.isPlaying = false
+	this.recordingEnabled = true
 
+	this.testAbilityToRecord()
 	this.createControls()
 	this.positionControls()
 	this.setupEventListeners()
@@ -98,11 +108,19 @@ Sequencer.prototype = {
 			controlText : ['&#9995;','&#128080;','&#128075;']
 		}
 
+		let controlIds = ['minus','plus'],
+			controlText = ['&#9876;','&#9935;']
+
+		if (this.recordingEnabled) {
+			controlIds = ['minus','record','plus']
+			controlText = ['&#9876;','&#43;','&#9935;']
+		}
+
 		let bpmControls = {
 			containerClassName: 'bpmContainer',
 			controlsContainerClassName: 'controls',
-			controlIds: ['minus','plus'],
-			controlText : ['&#9876;','&#9935;']
+			controlIds: controlIds,
+			controlText : controlText
 		}
 
 		const controlCreator = (props) => {
@@ -150,9 +168,6 @@ Sequencer.prototype = {
 			setTop = Helpers.max([halfTop, absoluteTop])
 
 		Helpers.setStyle(container, { top: Helpers.toPixels(setTop) })
-		// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop/2 - height/2) })
-		// Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + height/2) })
-		// Helpers.setStyle(container,{ top: Helpers.toPixels(gridTop - 85) })
 		Helpers.setStyle(bpmContainer,{ top: Helpers.toPixels(gridTop + gridHeight + 20) })
 	},
 
@@ -211,6 +226,32 @@ Sequencer.prototype = {
 		})
 	},
 
+	handleRecordButton: function() {
+		if (!this.recordingEnabled) return;
+
+		let button = document.querySelector('#record')
+		record.onclick = () => {
+			let backdrop = document.createElement('div')
+
+			Helpers.setStyle(backdrop,
+			{
+				height: '100vh',
+				width: '100vw',
+				zIndex: 100,
+				opacity: '.7',
+				position: 'fixed',
+				backgroundColor: 'red'
+			})
+			document.body.appendChild(backdrop)
+
+			this.recordAudio()
+
+			setTimeout( () => {
+				document.body.removeChild(backdrop)
+			},2000)
+		}
+	},
+
 	setupEventListeners: function() {
 		this.handleResize()
 		this.handlePlayButton()
@@ -218,6 +259,7 @@ Sequencer.prototype = {
 		this.handleBPMIncreaseButton()
 		this.handlBPMDecreaseButton()
 		this.handlePrivateButton()
+		this.handleRecordButton()
 	},
 
 	addSelectedClass: function(el) {
@@ -229,6 +271,36 @@ Sequencer.prototype = {
 	playDummySound: function() {
 		let ctx = this
 		ctx.grid.canvas.addEventListener('click',() => ctx.audio.playDummySound() )
+	},
+
+	recordAudio: function() {
+		if (this.grid.sounds.bites.length === this.grid.maxNSounds) {
+			this.disableRecording()
+			return
+		}
+
+		let wasPlaying = this.isPlaying
+		this.pause()
+
+		let id = this.audio.recordAudio()
+		setTimeout( () => {
+			this.grid.sounds.createRandomizedBite(id)
+			this.grid.handleElements([this.grid.sounds.bites[this.grid.sounds.bites.length-1]])
+			this.grid.sounds.animateElementPopIn(this.grid.sounds.bites[this.grid.sounds.bites.length-1])
+
+			if (wasPlaying) this.loop();
+
+		},2000)
+	},
+
+	disableRecording: function() {
+		this.recordingEnabled = false
+		let button = document.querySelector('#record')
+		button.removeEventListener('click')
+	},
+
+	testAbilityToRecord: function() {
+		if (!this.audio.canRecord()) this.recordingEnabled = false;
 	}
 
 }

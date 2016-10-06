@@ -10,6 +10,8 @@ function Grid(dimensions) {
 
 	this.socketHandler = new SocketHandler(this)
 
+	this.maxNSounds = (dimensions.rows * dimensions.cols) - 1
+
 	this.canvas = ( () => {
 		let canvas = document.createElement('canvas')
 
@@ -43,7 +45,7 @@ function Grid(dimensions) {
 
 	// configure event listeners
 
-	this.handleElements()
+	this.handleElements(this.sounds.bites)
 }
 
 Grid.prototype = {
@@ -225,26 +227,27 @@ Grid.prototype = {
 
 	// configure handling of element pickup and release from grid
 
-	handleElements: function() {
-		let bites = this.sounds.bites,
-			ctx = this
+	handleElements: function(bites) {
+		// let bites = this.sounds.bites,
+		let ctx = this
 
 		const elementPickup = (e) => {
 			ctx.sounds.clearPlayingAnimation(e.target)
 			ctx.sounds.clearRestingAnimation(e.target)
 			e.target.bite.beganWithMouseDown = true
 			e.target.bite.isSelected = true
-			ctx.sounds.sendToBackground(bites)
+			ctx.sounds.sendToBackground(ctx.sounds.bites)
 			ctx.sounds.bringToForeground([e.target])
 			ctx.sounds.setSelectedStyle(e.target)
 			ctx.undock(e.target)
+			// ctx.sounds.queryZIndices()
 		}
 
 		const elementRelease = (e) => {
 			if (!e.target.bite.beganWithMouseDown) return;
 			e.target.bite.beganWithMouseDown = false
 			e.target.bite.isSelected = false
-			ctx.sounds.bringToForeground(bites)
+			ctx.sounds.bringToForeground(ctx.sounds.bites)
 			ctx.sounds.setUnselectedStyle(e.target)
 			this.dock(e.target)
 		}

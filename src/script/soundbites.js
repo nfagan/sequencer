@@ -6,20 +6,20 @@ function SoundBites(cellSize) {
 	this.cellSize = cellSize
 	this.templates = [
 		{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 },
-		{ filename: 'perc_moondog.mp3', color: '#28FA91', createN: 1 },
-		{ filename: 'perc_shaker.mp3', color: '#6E77F5', createN: 1 },
-		{ filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 },
-		{ filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 1 },
-		{ filename: 'perc_woodblock_low.mp3', color: '#2828FA', createN: 1 },
-		{ filename: 'between_friends_hi.mp3', color: 'red', createN: 1 },
-		{ filename: 'between_friends.mp3', color: '#B428FA', createN: 1 },
-		{ filename: 'note_c.mp3', color: '#28D7FA', createN: 2 },
-		{ filename: 'note_e.mp3', color: '#B2F56E', createN: 2 },
-		{ filename: 'note_a.mp3', color: 'gray', createN: 2 },
-		{ filename: 'note_g.mp3', color: '#D5BAFF', createN: 2 },
-		{ filename: 'celeste_piano_c_e.mp3', color: '#F09D69', createN: 1 },
-		{ filename: 'celeste_piano_c.mp3', color: '#F09D69', createN: 1 },
-		{ filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }
+		// { filename: 'perc_moondog.mp3', color: '#28FA91', createN: 1 },
+		// { filename: 'perc_shaker.mp3', color: '#6E77F5', createN: 1 },
+		// { filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 },
+		// { filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 1 },
+		// { filename: 'perc_woodblock_low.mp3', color: '#2828FA', createN: 1 },
+		// { filename: 'between_friends_hi.mp3', color: 'red', createN: 1 },
+		// { filename: 'between_friends.mp3', color: '#B428FA', createN: 1 },
+		// { filename: 'note_c.mp3', color: '#28D7FA', createN: 2 },
+		// { filename: 'note_e.mp3', color: '#B2F56E', createN: 2 },
+		// { filename: 'note_a.mp3', color: 'gray', createN: 2 },
+		// { filename: 'note_g.mp3', color: '#D5BAFF', createN: 2 },
+		// { filename: 'celeste_piano_c_e.mp3', color: '#F09D69', createN: 1 },
+		// { filename: 'celeste_piano_c.mp3', color: '#F09D69', createN: 1 },
+		// { filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }
 	]
 
 	this.bites = []
@@ -33,7 +33,7 @@ function SoundBites(cellSize) {
 SoundBites.prototype = {
 	constructor: SoundBites,
 
-	createBites: function(templates) {
+	createBites: function(templates, defaultProps) {
 		let count = this.bites.length,
 			windowHeight = Math.round(window.innerHeight)
 
@@ -47,8 +47,10 @@ SoundBites.prototype = {
 					height: Helpers.toPixels(this.cellSize),
 					width: Helpers.toPixels(this.cellSize),
 					backgroundColor: temp.color,
-					zIndex: 1
+					zIndex: '1'
 				}
+
+				if (defaultProps) Object.assign(styleProps, defaultProps);
 
 				let el = document.createElement('div'),
 					bite = {}
@@ -80,6 +82,17 @@ SoundBites.prototype = {
 		})
 	},
 
+	createRandomizedBite: function(id) {
+		let color = Helpers.toRGB(Helpers.randInt(0,255), Helpers.randInt(0, 255), Helpers.randInt(0, 255))
+		this.createBites([{ filename: id, color: color, createN: 1 }],
+			{
+				top: Helpers.toPixels(window.innerHeight/2 - this.cellSize/2),
+				left: Helpers.toPixels(window.innerWidth/2 - this.cellSize/2)
+			 })
+		this.sendToBackground(this.bites)
+		this.bringToForeground([this.bites[this.bites.length-1]])
+	},
+
 	setPosition: function(el,pos) {
 		Helpers.setStyle(el,
 			{
@@ -97,6 +110,7 @@ SoundBites.prototype = {
 	},
 
 	bringToForeground: function(bites) { 
+		console.log('bites are', this.bites)
 		bites.map( (bite) => { Helpers.setStyle(bite,{ zIndex: '2' })})
 	},
 
@@ -115,6 +129,10 @@ SoundBites.prototype = {
 
 	getFileNames: function() {
 		return this.bites.map( (bite) => { return bite.bite.filename })
+	},
+
+	getAllBitesExcept: function(filename) {
+		return this.bites.filter( (bite) => bite.bite.filename !== filename )
 	},
 
 	clearPlayingAnimation: function(el) {
@@ -158,15 +176,15 @@ SoundBites.prototype = {
 		setTimeout( () => document.body.removeChild(circle),400)
 	},
 
-	setSelectedStyle(el) {
+	setSelectedStyle: function(el) {
 		tween.to(el, .1, { height: el.bite.size*1.15, width: el.bite.size*1.15 })
 	},
 
-	setUnselectedStyle(el) { 
+	setUnselectedStyle: function(el) { 
 		tween.to(el, .1, { height: el.bite.size, width: el.bite.size })
 	},
 
-	animateRestingElement(el) {
+	animateRestingElement: function(el) {
 		let anim = new TimelineMax(),
 			amt = Helpers.randInt(1,8),
 			expression = '+=.' + amt.toString()
@@ -175,9 +193,18 @@ SoundBites.prototype = {
 		el.bite.playingAnimation = anim
 	},
 
-	clearRestingAnimation(el) {
+	clearRestingAnimation: function(el) {
 		el.bite.playingAnimation.seek(0)
 		el.bite.playingAnimation.kill()
+	},
+
+	queryZIndices: function() {
+		let zIndices = []
+		this.bites.map( (bite) => { 
+			let zIndex = bite.style.zIndex
+			zIndices.push(zIndex)
+		})
+		console.log(zIndices)
 	}
 }
 
