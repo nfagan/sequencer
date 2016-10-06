@@ -24,7 +24,7 @@ html, body {
   float: left;
   transition: transform .2s;
   cursor: pointer; }
-  .controls p#play, .controls p#direction, .controls p#minus {
+  .controls p#play, .controls p#direction, .controls p#minus, .controls p#record {
     padding-right: 1em; }
   .controls p:hover {
     transform: scale(1.1, 1.1); }
