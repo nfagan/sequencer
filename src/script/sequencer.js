@@ -1,14 +1,17 @@
 import Grid from './grid.js'
 import AudioHandler from './audiohandler.js'
 import Helpers from './helpers.js'
+const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
 
 /*
 
 	TODO:
-		-	only record audio if recording is supported
+		-	* only record audio if recording is supported *
 		-	remove ability to record sound until testing has finished
 		-	remove ability to record if more than N number of sounds present
+		-	In audiohandler, remove return from removeSound
+		-	In audiohandler, add <return> to removeSound, uncomment uploadSound()
 */
 
 function Sequencer() {
@@ -37,7 +40,7 @@ Sequencer.prototype = {
 	defineGridSize: function() {
 		let h = window.innerHeight
 		if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
-		return { cellSize: 50, rows: 7, cols: 6 }
+		return { cellSize: 50, rows: 6, cols: 6 }
 	},
 
 	loop: function() {
@@ -113,7 +116,7 @@ Sequencer.prototype = {
 
 		if (this.recordingEnabled) {
 			controlIds = ['minus','record','plus']
-			controlText = ['&#9876;','&#43;','&#9935;']
+			controlText = ['&#9876;','&#128519;','&#9935;']
 		}
 
 		let bpmControls = {
@@ -229,8 +232,13 @@ Sequencer.prototype = {
 	handleRecordButton: function() {
 		if (!this.recordingEnabled) return;
 
-		let button = document.querySelector('#record')
+		let button = document.querySelector('#record'),
+			ctx = this
+
+		tween.to(button, 1, { css: { 'opacity': '1' } })
+
 		record.onclick = () => {
+
 			let backdrop = document.createElement('div')
 
 			Helpers.setStyle(backdrop,
@@ -249,6 +257,11 @@ Sequencer.prototype = {
 			setTimeout( () => {
 				document.body.removeChild(backdrop)
 			},2000)
+
+			if (ctx.grid.maxNSounds - ctx.grid.sounds.bites.length === 1) {
+				ctx.disableRecording()
+				return
+			}
 		}
 	},
 
@@ -259,7 +272,7 @@ Sequencer.prototype = {
 		this.handleBPMIncreaseButton()
 		this.handlBPMDecreaseButton()
 		this.handlePrivateButton()
-		this.handleRecordButton()
+		setTimeout( () => { this.handleRecordButton() }, 2500)
 	},
 
 	addSelectedClass: function(el) {
@@ -274,10 +287,6 @@ Sequencer.prototype = {
 	},
 
 	recordAudio: function() {
-		if (this.grid.sounds.bites.length === this.grid.maxNSounds) {
-			this.disableRecording()
-			return
-		}
 
 		let wasPlaying = this.isPlaying
 		this.pause()
@@ -296,7 +305,11 @@ Sequencer.prototype = {
 	disableRecording: function() {
 		this.recordingEnabled = false
 		let button = document.querySelector('#record')
-		button.removeEventListener('click')
+		button.innerHTML = '&#128683;'
+		button.classList.add('controls--disabled')
+		button.onclick = null
+		button.style.opacity = '.1'
+		button.style.cursor = 'not-allowed'
 	},
 
 	testAbilityToRecord: function() {

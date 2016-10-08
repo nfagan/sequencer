@@ -20,6 +20,8 @@ html, body { padding: 0; margin: 0; position: fixed; font-size: 1.2em; }
 
 // controls
 
+#record { opacity: 0; }
+
 .controls p {
 	font-size: 2rem;
 	float: left; 
@@ -36,6 +38,10 @@ html, body { padding: 0; margin: 0; position: fixed; font-size: 1.2em; }
 	}
 
 	&.--selected { transform: scale(.9,.9); }
+}
+
+.controls .controls--disabled {
+	&:hover { transform: none; }
 }
 
 @media (max-height: 600px) {

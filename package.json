@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.15.2",
     "draggabilly": "^2.1.1",
     "express": "^4.14.0",
     "gsap": "^1.19.0",

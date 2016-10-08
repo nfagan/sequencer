@@ -66,7 +66,9 @@ AudioHandler.prototype = {
 		console.log('played dummy sound')
 	},
 
-	recordAudio: function() {
+	recordAudio: function(gainAmt) {
+
+		if (gainAmt == null) gainAmt = 10;
 
 		let id = Math.random().toString(36).substring(7)	//	generate random id
 
@@ -75,7 +77,7 @@ AudioHandler.prototype = {
 
 			let mediaStreamSource = this.context.createMediaStreamSource(stream)
 			let gainNode = this.context.createGain()
-			gainNode.gain.value = 10
+			gainNode.gain.value = gainAmt
 			// mediaStreamSource.connect(this.context.destination)
 			mediaStreamSource.connect(gainNode)
 			gainNode.connect(this.context.destination)
@@ -93,6 +95,7 @@ AudioHandler.prototype = {
 					bufferStore.getChannelData(0).set(buffer[0])
 					this.sounds.push(bufferStore)
 					this.filenames.push(id)
+					// this.uploadAudio(id)
 					console.log('stored sounds are', this.sounds.length)
 					console.log('stored files are', this.filenames)
 				})
@@ -104,10 +107,17 @@ AudioHandler.prototype = {
 	},
 
 	getSoundByFilename: function(filename) {
-		let d = 10
+		let index = this.filenames.indexOf(filename)
+
+		if (index === -1) return -1;
+
+		return this.sounds[index]
 	},
 
 	removeSound: function(id) {
+		//	NOTE 
+		// return
+
 		let index = this.filenames.indexOf(id)
 		this.sounds.splice(index, 1)
 		this.filenames.splice(index, 1)
@@ -117,7 +127,7 @@ AudioHandler.prototype = {
 
 	canRecord: function() {
 		try {
-			let id = this.recordAudio()
+			let id = this.recordAudio(.1)	//	record with gain of .1
 			setTimeout(() => this.removeSound(id), 1500)
 			return true
 		} catch (err) {
@@ -127,10 +137,17 @@ AudioHandler.prototype = {
 
 	uploadAudio: function(filename) {
 		let upload = new XMLHttpRequest(),
-			fullfile = '/sequencer/save/' + filename
-		upload.open('POST', fullfile, true)
+			fullfile = '/sequencer/save/' + filename,
+			sound = this.getSoundByFilename(filename)
 
-		upload.send()
+		if (sound === -1) throw 'Could not find sound' + filename;
+
+		let blob = new Blob(sound, { type: 'audio/wav' })
+
+		// debugger;
+
+		upload.open('POST', fullfile, true)
+		upload.send(blob)
 	}
 }
 

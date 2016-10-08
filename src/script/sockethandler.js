@@ -7,6 +7,7 @@ function SocketHandler(grid) {
 	this.grid = grid
 	this.SOCKET_CLIENT_ID = null
 	this.ALLOW_PUBLIC_OVERRIDE = true
+	this.ALLOW_DOCKING = true
 	this.N_CONCURRENT_CLIENTS = 3
 	this.otherClientIds = []
 
@@ -34,7 +35,13 @@ SocketHandler.prototype = {
 	},
 
 	acceptPublicInput: function(incomingId) {
-		if ((!this.ALLOW_PUBLIC_OVERRIDE) || (incomingId === this.SOCKET_CLIENT_ID)) return false
+		if ((!this.ALLOW_PUBLIC_OVERRIDE) || 
+			(incomingId === this.SOCKET_CLIENT_ID) || 
+			(!this.ALLOW_DOCKING)) 
+		{
+			return false
+		}
+		
 		let otherClientIds = this.otherClientIds
 		return this.isACurrentOtherClientId(incomingId)
 	},
@@ -74,7 +81,7 @@ SocketHandler.prototype = {
 		let newPosition = this.grid.getCell(sound)
 
 		Helpers.setStyle(element, {top: Helpers.toPixels(newPosition.top), left: Helpers.toPixels(newPosition.left) })
-		this.grid.sounds.animateElementPopIn(element)	//	animate the popin
+		// this.grid.sounds.animateElementPopIn(element)	//	animate the popin
 		this.grid.dock(element, { emit: false }) 	// do not emit the event
 	}
 }

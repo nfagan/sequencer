@@ -56,7 +56,6 @@
 
 	// :)
 
-	// import usermediaTest2 from '../../playground/usermediaTest2.js'
 	sequencer.loop();
 
 /***/ },
@@ -73,7 +72,7 @@
 
 	var _grid2 = _interopRequireDefault(_grid);
 
-	var _audiohandler = __webpack_require__(56);
+	var _audiohandler = __webpack_require__(57);
 
 	var _audiohandler2 = _interopRequireDefault(_audiohandler);
 
@@ -83,12 +82,16 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	var tween = __webpack_require__(5);
+
 	/*
 
 		TODO:
-			-	only record audio if recording is supported
+			-	* only record audio if recording is supported *
 			-	remove ability to record sound until testing has finished
 			-	remove ability to record if more than N number of sounds present
+			-	In audiohandler, remove return from removeSound
+			-	In audiohandler, add <return> to removeSound, uncomment uploadSound()
 	*/
 
 	function Sequencer() {
@@ -117,7 +120,7 @@
 		defineGridSize: function defineGridSize() {
 			var h = window.innerHeight;
 			if (h < 600) return { cellSize: 50, rows: 6, cols: 6 };
-			return { cellSize: 50, rows: 7, cols: 6 };
+			return { cellSize: 50, rows: 6, cols: 6 };
 		},
 
 		loop: function loop() {
@@ -194,7 +197,7 @@
 
 			if (this.recordingEnabled) {
 				controlIds = ['minus', 'record', 'plus'];
-				controlText = ['&#9876;', '&#43;', '&#9935;'];
+				controlText = ['&#9876;', '&#128519;', '&#9935;'];
 			}
 
 			var bpmControls = {
@@ -326,8 +329,13 @@
 
 			if (!this.recordingEnabled) return;
 
-			var button = document.querySelector('#record');
+			var button = document.querySelector('#record'),
+			    ctx = this;
+
+			tween.to(button, 1, { css: { 'opacity': '1' } });
+
 			record.onclick = function () {
+
 				var backdrop = document.createElement('div');
 
 				_helpers2.default.setStyle(backdrop, {
@@ -345,17 +353,26 @@
 				setTimeout(function () {
 					document.body.removeChild(backdrop);
 				}, 2000);
+
+				if (ctx.grid.maxNSounds - ctx.grid.sounds.bites.length === 1) {
+					ctx.disableRecording();
+					return;
+				}
 			};
 		},
 
 		setupEventListeners: function setupEventListeners() {
+			var _this9 = this;
+
 			this.handleResize();
 			this.handlePlayButton();
 			this.handleDirectionButton();
 			this.handleBPMIncreaseButton();
 			this.handlBPMDecreaseButton();
 			this.handlePrivateButton();
-			this.handleRecordButton();
+			setTimeout(function () {
+				_this9.handleRecordButton();
+			}, 2500);
 		},
 
 		addSelectedClass: function addSelectedClass(el) {
@@ -374,30 +391,29 @@
 		},
 
 		recordAudio: function recordAudio() {
-			var _this9 = this;
-
-			if (this.grid.sounds.bites.length === this.grid.maxNSounds) {
-				this.disableRecording();
-				return;
-			}
+			var _this10 = this;
 
 			var wasPlaying = this.isPlaying;
 			this.pause();
 
 			var id = this.audio.recordAudio();
 			setTimeout(function () {
-				_this9.grid.sounds.createRandomizedBite(id);
-				_this9.grid.handleElements([_this9.grid.sounds.bites[_this9.grid.sounds.bites.length - 1]]);
-				_this9.grid.sounds.animateElementPopIn(_this9.grid.sounds.bites[_this9.grid.sounds.bites.length - 1]);
+				_this10.grid.sounds.createRandomizedBite(id);
+				_this10.grid.handleElements([_this10.grid.sounds.bites[_this10.grid.sounds.bites.length - 1]]);
+				_this10.grid.sounds.animateElementPopIn(_this10.grid.sounds.bites[_this10.grid.sounds.bites.length - 1]);
 
-				if (wasPlaying) _this9.loop();
+				if (wasPlaying) _this10.loop();
 			}, 2000);
 		},
 
 		disableRecording: function disableRecording() {
 			this.recordingEnabled = false;
 			var button = document.querySelector('#record');
-			button.removeEventListener('click');
+			button.innerHTML = '&#128683;';
+			button.classList.add('controls--disabled');
+			button.onclick = null;
+			button.style.opacity = '.1';
+			button.style.cursor = 'not-allowed';
 		},
 
 		testAbilityToRecord: function testAbilityToRecord() {
@@ -430,13 +446,10 @@
 
 	var _sockethandler2 = _interopRequireDefault(_sockethandler);
 
-	var _audiohandler = __webpack_require__(56);
-
-	var _audiohandler2 = _interopRequireDefault(_audiohandler);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var interact = __webpack_require__(58);
+	// import AudioHandler from './audiohandler.js'
+	var interact = __webpack_require__(56);
 	var tween = __webpack_require__(5);
 
 	function Grid(dimensions) {
@@ -447,6 +460,7 @@
 		this.socketHandler = new _sockethandler2.default(this);
 
 		this.maxNSounds = dimensions.rows * dimensions.cols - 1;
+		this.maxNSounds = 30;
 
 		this.canvas = function () {
 			var canvas = document.createElement('canvas');
@@ -590,9 +604,12 @@
 
 			this.cells[index].containedSound = null;
 			this.cells[index].isEmpty = true;
+			el.bite.isDocked = false;
 		},
 
 		dock: function dock(el, props) {
+			var _this4 = this;
+
 			var defaults = { emit: true };
 
 			if (props) {
@@ -620,7 +637,13 @@
 			el.bite.isDocked = true;
 			el.bite.cellIndex = index;
 
-			this.sounds.setPosition(el, closest);
+			this.sounds.setPosition(el, closest, true);
+
+			// have circle animation play
+
+			setTimeout(function () {
+				_this4.sounds.animateElementPopIn(el);
+			}, 25);
 
 			// don't emit if the emitter source is the current client
 
@@ -662,12 +685,12 @@
 		},
 
 		setContainedElementPositions: function setContainedElementPositions() {
-			var _this4 = this;
+			var _this5 = this;
 
 			var cells = this.getNonEmptyCells();
 			if (cells.length === 0) return;
 			cells.map(function (cell) {
-				return _this4.sounds.setPosition(cell.containedSound, cell);
+				return _this5.sounds.setPosition(cell.containedSound, cell);
 			});
 		},
 
@@ -685,9 +708,8 @@
 		// configure handling of element pickup and release from grid
 
 		handleElements: function handleElements(bites) {
-			var _this5 = this;
+			var _this6 = this;
 
-			// let bites = this.sounds.bites,
 			var ctx = this;
 
 			var elementPickup = function elementPickup(e) {
@@ -696,6 +718,7 @@
 				e.target.bite.beganWithMouseDown = true;
 				e.target.bite.isSelected = true;
 				ctx.sounds.sendToBackground(ctx.sounds.bites);
+				console.log('target is', e.target);
 				ctx.sounds.bringToForeground([e.target]);
 				ctx.sounds.setSelectedStyle(e.target);
 				ctx.undock(e.target);
@@ -708,7 +731,7 @@
 				e.target.bite.isSelected = false;
 				ctx.sounds.bringToForeground(ctx.sounds.bites);
 				ctx.sounds.setUnselectedStyle(e.target);
-				_this5.dock(e.target);
+				_this6.dock(e.target);
 			};
 
 			for (var i = 0; i < bites.length; i++) {
@@ -828,7 +851,7 @@
 	function SoundBites(cellSize) {
 		this.container = document.createElement('div');
 		this.cellSize = cellSize;
-		this.templates = [{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 }];
+		this.templates = [{ filename: 'perc_hi_hat.mp3', color: 'teal', createN: 1 }, { filename: 'perc_moondog.mp3', color: '#28FA91', createN: 2 }, { filename: 'perc_shaker.mp3', color: '#6E77F5', createN: 1 }, { filename: 'perc_kick.mp3', color: '#FA2891', createN: 3 }, { filename: 'perc_open_hi.mp3', color: '#F5ED6E', createN: 1 }, { filename: 'perc_woodblock_low.mp3', color: '#2828FA', createN: 1 }, { filename: 'between_friends_hi.mp3', color: 'red', createN: 1 }, { filename: 'between_friends.mp3', color: '#B428FA', createN: 1 }, { filename: 'note_c.mp3', color: '#28D7FA', createN: 2 }, { filename: 'note_e.mp3', color: '#B2F56E', createN: 2 }, { filename: 'note_a.mp3', color: 'gray', createN: 2 }, { filename: 'note_g.mp3', color: '#D5BAFF', createN: 2 }, { filename: 'celeste_piano_c_e.mp3', color: '#F09D69', createN: 1 }, { filename: 'celeste_piano_c.mp3', color: '#F09D69', createN: 1 }, { filename: 'celeste_piano_g_e.mp3', color: '#F09D69', createN: 1 }];
 
 		this.bites = [];
 		this.createBites(this.templates);
@@ -920,7 +943,6 @@
 		},
 
 		bringToForeground: function bringToForeground(bites) {
-			console.log('bites are', this.bites);
 			bites.map(function (bite) {
 				_helpers2.default.setStyle(bite, { zIndex: '2' });
 			});
@@ -1129,6 +1151,7 @@
 		this.grid = grid;
 		this.SOCKET_CLIENT_ID = null;
 		this.ALLOW_PUBLIC_OVERRIDE = true;
+		this.ALLOW_DOCKING = true;
 		this.N_CONCURRENT_CLIENTS = 3;
 		this.otherClientIds = [];
 
@@ -1164,7 +1187,10 @@
 		},
 
 		acceptPublicInput: function acceptPublicInput(incomingId) {
-			if (!this.ALLOW_PUBLIC_OVERRIDE || incomingId === this.SOCKET_CLIENT_ID) return false;
+			if (!this.ALLOW_PUBLIC_OVERRIDE || incomingId === this.SOCKET_CLIENT_ID || !this.ALLOW_DOCKING) {
+				return false;
+			}
+
 			var otherClientIds = this.otherClientIds;
 			return this.isACurrentOtherClientId(incomingId);
 		},
@@ -1201,7 +1227,7 @@
 			var newPosition = this.grid.getCell(sound);
 
 			_helpers2.default.setStyle(element, { top: _helpers2.default.toPixels(newPosition.top), left: _helpers2.default.toPixels(newPosition.left) });
-			this.grid.sounds.animateElementPopIn(element); //	animate the popin
+			// this.grid.sounds.animateElementPopIn(element)	//	animate the popin
 			this.grid.dock(element, { emit: false }); // do not emit the event
 		}
 	};
@@ -8647,583 +8673,6 @@
 /* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-		value: true
-	});
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	var _helpers = __webpack_require__(3);
-
-	var _helpers2 = _interopRequireDefault(_helpers);
-
-	var _recorder = __webpack_require__(57);
-
-	var _recorder2 = _interopRequireDefault(_recorder);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function AudioHandler(filenames) {
-		var AudioContext = window.AudioContext || window.webkitAudioContext;
-
-		filenames = _helpers2.default.uniques(filenames);
-
-		this.filenames = [];
-		this.sounds = [];
-		this.context = new AudioContext();
-		this.loadSounds(filenames);
-		this.playedDummySound = false; //	hack to make audio work in iOS
-	}
-
-	AudioHandler.prototype = {
-
-		constructor: AudioHandler,
-
-		loadSounds: function loadSounds(files) {
-			var _this = this;
-
-			files.map(function (file) {
-				_this.loadSound(file);
-				_this.filenames.push(file);
-			});
-		},
-
-		loadSound: function loadSound(filename) {
-			var _this2 = this;
-
-			if (this.filenames.indexOf(filename) !== -1) return;
-
-			var request = new XMLHttpRequest(),
-			    fullfile = '/sequencer/sounds/' + filename;
-
-			request.open('GET', fullfile);
-			request.responseType = 'arraybuffer';
-
-			request.onload = function () {
-				_this2.context.decodeAudioData(request.response, function (buffer) {
-					_this2.sounds.push(buffer);
-				});
-			};
-
-			request.send();
-		},
-
-		playSound: function playSound(id) {
-			var source = this.context.createBufferSource(),
-			    index = this.filenames.indexOf(id);
-
-			source.buffer = this.sounds[index];
-			source.connect(this.context.destination);
-			source.start(0);
-		},
-
-		playDummySound: function playDummySound() {
-			if (this.playedDummySound) return;
-
-			var buffer = this.context.createBuffer(1, 1, 22050),
-			    source = this.context.createBufferSource();
-
-			source.buffer = buffer;
-			source.connect(this.context.destination);
-			source.start(0);
-
-			this.playedDummySound = true;
-
-			console.log('played dummy sound');
-		},
-
-		recordAudio: function recordAudio() {
-			var _this3 = this;
-
-			var id = Math.random().toString(36).substring(7); //	generate random id
-
-			navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-				console.log('got stream');
-
-				var mediaStreamSource = _this3.context.createMediaStreamSource(stream);
-				var gainNode = _this3.context.createGain();
-				gainNode.gain.value = 10;
-				// mediaStreamSource.connect(this.context.destination)
-				mediaStreamSource.connect(gainNode);
-				gainNode.connect(_this3.context.destination);
-
-				var recorder = new _recorder2.default(gainNode);
-
-				_this3.recorder = recorder;
-				_this3.recorder.record();
-
-				setTimeout(function () {
-					stream.getAudioTracks()[0].stop();
-					_this3.recorder.getBuffer(function (buffer) {
-						buffer[0] = Array.prototype.slice.call(buffer[0], 30000);
-						var bufferStore = _this3.context.createBuffer(1, buffer[0].length, _this3.context.sampleRate);
-						bufferStore.getChannelData(0).set(buffer[0]);
-						_this3.sounds.push(bufferStore);
-						_this3.filenames.push(id);
-						console.log('stored sounds are', _this3.sounds.length);
-						console.log('stored files are', _this3.filenames);
-					});
-				}, 1000);
-			});
-
-			return id;
-		},
-
-		getSoundByFilename: function getSoundByFilename(filename) {
-			var d = 10;
-		},
-
-		removeSound: function removeSound(id) {
-			var index = this.filenames.indexOf(id);
-			this.sounds.splice(index, 1);
-			this.filenames.splice(index, 1);
-			console.log('stored sounds are now', this.sounds);
-			console.log('stored files are now', this.filenames);
-		},
-
-		canRecord: function canRecord() {
-			var _this4 = this;
-
-			try {
-				var _ret = function () {
-					var id = _this4.recordAudio();
-					setTimeout(function () {
-						return _this4.removeSound(id);
-					}, 1500);
-					return {
-						v: true
-					};
-				}();
-
-				if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
-			} catch (err) {
-				return false;
-			}
-		},
-
-		uploadAudio: function uploadAudio(filename) {
-			var upload = new XMLHttpRequest(),
-			    fullfile = '/sequencer/save/' + filename;
-			upload.open('POST', fullfile, true);
-
-			upload.send();
-		}
-	};
-
-	exports.default = AudioHandler;
-
-/***/ },
-/* 57 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var require;var require;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-	(function (f) {
-	    if (( false ? "undefined" : _typeof(exports)) === "object" && typeof module !== "undefined") {
-	        module.exports = f();
-	    } else if (true) {
-	        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (f), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-	    } else {
-	        var g;if (typeof window !== "undefined") {
-	            g = window;
-	        } else if (typeof global !== "undefined") {
-	            g = global;
-	        } else if (typeof self !== "undefined") {
-	            g = self;
-	        } else {
-	            g = this;
-	        }g.Recorder = f();
-	    }
-	})(function () {
-	    var define, module, exports;return function e(t, n, r) {
-	        function s(o, u) {
-	            if (!n[o]) {
-	                if (!t[o]) {
-	                    var a = typeof require == "function" && require;if (!u && a) return require(o, !0);if (i) return i(o, !0);var f = new Error("Cannot find module '" + o + "'");throw f.code = "MODULE_NOT_FOUND", f;
-	                }var l = n[o] = { exports: {} };t[o][0].call(l.exports, function (e) {
-	                    var n = t[o][1][e];return s(n ? n : e);
-	                }, l, l.exports, e, t, n, r);
-	            }return n[o].exports;
-	        }var i = typeof require == "function" && require;for (var o = 0; o < r.length; o++) {
-	            s(r[o]);
-	        }return s;
-	    }({ 1: [function (require, module, exports) {
-	            "use strict";
-
-	            module.exports = require("./recorder").Recorder;
-	        }, { "./recorder": 2 }], 2: [function (require, module, exports) {
-	            'use strict';
-
-	            var _createClass = function () {
-	                function defineProperties(target, props) {
-	                    for (var i = 0; i < props.length; i++) {
-	                        var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
-	                    }
-	                }return function (Constructor, protoProps, staticProps) {
-	                    if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
-	                };
-	            }();
-
-	            Object.defineProperty(exports, "__esModule", {
-	                value: true
-	            });
-	            exports.Recorder = undefined;
-
-	            var _inlineWorker = require('inline-worker');
-
-	            var _inlineWorker2 = _interopRequireDefault(_inlineWorker);
-
-	            function _interopRequireDefault(obj) {
-	                return obj && obj.__esModule ? obj : { default: obj };
-	            }
-
-	            function _classCallCheck(instance, Constructor) {
-	                if (!(instance instanceof Constructor)) {
-	                    throw new TypeError("Cannot call a class as a function");
-	                }
-	            }
-
-	            var Recorder = exports.Recorder = function () {
-	                function Recorder(source, cfg) {
-	                    var _this = this;
-
-	                    _classCallCheck(this, Recorder);
-
-	                    this.config = {
-	                        bufferLen: 4096,
-	                        numChannels: 2,
-	                        mimeType: 'audio/wav'
-	                    };
-	                    this.recording = false;
-	                    this.callbacks = {
-	                        getBuffer: [],
-	                        exportWAV: []
-	                    };
-
-	                    Object.assign(this.config, cfg);
-	                    this.context = source.context;
-	                    this.node = (this.context.createScriptProcessor || this.context.createJavaScriptNode).call(this.context, this.config.bufferLen, this.config.numChannels, this.config.numChannels);
-
-	                    this.node.onaudioprocess = function (e) {
-	                        if (!_this.recording) return;
-
-	                        var buffer = [];
-	                        for (var channel = 0; channel < _this.config.numChannels; channel++) {
-	                            buffer.push(e.inputBuffer.getChannelData(channel));
-	                        }
-	                        _this.worker.postMessage({
-	                            command: 'record',
-	                            buffer: buffer
-	                        });
-	                    };
-
-	                    source.connect(this.node);
-	                    this.node.connect(this.context.destination); //this should not be necessary
-
-	                    var self = {};
-	                    this.worker = new _inlineWorker2.default(function () {
-	                        var recLength = 0,
-	                            recBuffers = [],
-	                            sampleRate = undefined,
-	                            numChannels = undefined;
-
-	                        self.onmessage = function (e) {
-	                            switch (e.data.command) {
-	                                case 'init':
-	                                    init(e.data.config);
-	                                    break;
-	                                case 'record':
-	                                    record(e.data.buffer);
-	                                    break;
-	                                case 'exportWAV':
-	                                    exportWAV(e.data.type);
-	                                    break;
-	                                case 'getBuffer':
-	                                    getBuffer();
-	                                    break;
-	                                case 'clear':
-	                                    clear();
-	                                    break;
-	                            }
-	                        };
-
-	                        function init(config) {
-	                            sampleRate = config.sampleRate;
-	                            numChannels = config.numChannels;
-	                            initBuffers();
-	                        }
-
-	                        function record(inputBuffer) {
-	                            for (var channel = 0; channel < numChannels; channel++) {
-	                                recBuffers[channel].push(inputBuffer[channel]);
-	                            }
-	                            recLength += inputBuffer[0].length;
-	                        }
-
-	                        function exportWAV(type) {
-	                            var buffers = [];
-	                            for (var channel = 0; channel < numChannels; channel++) {
-	                                buffers.push(mergeBuffers(recBuffers[channel], recLength));
-	                            }
-	                            var interleaved = undefined;
-	                            if (numChannels === 2) {
-	                                interleaved = interleave(buffers[0], buffers[1]);
-	                            } else {
-	                                interleaved = buffers[0];
-	                            }
-	                            var dataview = encodeWAV(interleaved);
-	                            var audioBlob = new Blob([dataview], { type: type });
-
-	                            self.postMessage({ command: 'exportWAV', data: audioBlob });
-	                        }
-
-	                        function getBuffer() {
-	                            var buffers = [];
-	                            for (var channel = 0; channel < numChannels; channel++) {
-	                                buffers.push(mergeBuffers(recBuffers[channel], recLength));
-	                            }
-	                            self.postMessage({ command: 'getBuffer', data: buffers });
-	                        }
-
-	                        function clear() {
-	                            recLength = 0;
-	                            recBuffers = [];
-	                            initBuffers();
-	                        }
-
-	                        function initBuffers() {
-	                            for (var channel = 0; channel < numChannels; channel++) {
-	                                recBuffers[channel] = [];
-	                            }
-	                        }
-
-	                        function mergeBuffers(recBuffers, recLength) {
-	                            var result = new Float32Array(recLength);
-	                            var offset = 0;
-	                            for (var i = 0; i < recBuffers.length; i++) {
-	                                result.set(recBuffers[i], offset);
-	                                offset += recBuffers[i].length;
-	                            }
-	                            return result;
-	                        }
-
-	                        function interleave(inputL, inputR) {
-	                            var length = inputL.length + inputR.length;
-	                            var result = new Float32Array(length);
-
-	                            var index = 0,
-	                                inputIndex = 0;
-
-	                            while (index < length) {
-	                                result[index++] = inputL[inputIndex];
-	                                result[index++] = inputR[inputIndex];
-	                                inputIndex++;
-	                            }
-	                            return result;
-	                        }
-
-	                        function floatTo16BitPCM(output, offset, input) {
-	                            for (var i = 0; i < input.length; i++, offset += 2) {
-	                                var s = Math.max(-1, Math.min(1, input[i]));
-	                                output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-	                            }
-	                        }
-
-	                        function writeString(view, offset, string) {
-	                            for (var i = 0; i < string.length; i++) {
-	                                view.setUint8(offset + i, string.charCodeAt(i));
-	                            }
-	                        }
-
-	                        function encodeWAV(samples) {
-	                            var buffer = new ArrayBuffer(44 + samples.length * 2);
-	                            var view = new DataView(buffer);
-
-	                            /* RIFF identifier */
-	                            writeString(view, 0, 'RIFF');
-	                            /* RIFF chunk length */
-	                            view.setUint32(4, 36 + samples.length * 2, true);
-	                            /* RIFF type */
-	                            writeString(view, 8, 'WAVE');
-	                            /* format chunk identifier */
-	                            writeString(view, 12, 'fmt ');
-	                            /* format chunk length */
-	                            view.setUint32(16, 16, true);
-	                            /* sample format (raw) */
-	                            view.setUint16(20, 1, true);
-	                            /* channel count */
-	                            view.setUint16(22, numChannels, true);
-	                            /* sample rate */
-	                            view.setUint32(24, sampleRate, true);
-	                            /* byte rate (sample rate * block align) */
-	                            view.setUint32(28, sampleRate * 4, true);
-	                            /* block align (channel count * bytes per sample) */
-	                            view.setUint16(32, numChannels * 2, true);
-	                            /* bits per sample */
-	                            view.setUint16(34, 16, true);
-	                            /* data chunk identifier */
-	                            writeString(view, 36, 'data');
-	                            /* data chunk length */
-	                            view.setUint32(40, samples.length * 2, true);
-
-	                            floatTo16BitPCM(view, 44, samples);
-
-	                            return view;
-	                        }
-	                    }, self);
-
-	                    this.worker.postMessage({
-	                        command: 'init',
-	                        config: {
-	                            sampleRate: this.context.sampleRate,
-	                            numChannels: this.config.numChannels
-	                        }
-	                    });
-
-	                    this.worker.onmessage = function (e) {
-	                        var cb = _this.callbacks[e.data.command].pop();
-	                        if (typeof cb == 'function') {
-	                            cb(e.data.data);
-	                        }
-	                    };
-	                }
-
-	                _createClass(Recorder, [{
-	                    key: 'record',
-	                    value: function record() {
-	                        this.recording = true;
-	                    }
-	                }, {
-	                    key: 'stop',
-	                    value: function stop() {
-	                        this.recording = false;
-	                    }
-	                }, {
-	                    key: 'clear',
-	                    value: function clear() {
-	                        this.worker.postMessage({ command: 'clear' });
-	                    }
-	                }, {
-	                    key: 'getBuffer',
-	                    value: function getBuffer(cb) {
-	                        cb = cb || this.config.callback;
-	                        if (!cb) throw new Error('Callback not set');
-
-	                        this.callbacks.getBuffer.push(cb);
-
-	                        this.worker.postMessage({ command: 'getBuffer' });
-	                    }
-	                }, {
-	                    key: 'exportWAV',
-	                    value: function exportWAV(cb, mimeType) {
-	                        mimeType = mimeType || this.config.mimeType;
-	                        cb = cb || this.config.callback;
-	                        if (!cb) throw new Error('Callback not set');
-
-	                        this.callbacks.exportWAV.push(cb);
-
-	                        this.worker.postMessage({
-	                            command: 'exportWAV',
-	                            type: mimeType
-	                        });
-	                    }
-	                }], [{
-	                    key: 'forceDownload',
-	                    value: function forceDownload(blob, filename) {
-	                        var url = (window.URL || window.webkitURL).createObjectURL(blob);
-	                        var link = window.document.createElement('a');
-	                        link.href = url;
-	                        link.download = filename || 'output.wav';
-	                        var click = document.createEvent("Event");
-	                        click.initEvent("click", true, true);
-	                        link.dispatchEvent(click);
-	                    }
-	                }]);
-
-	                return Recorder;
-	            }();
-
-	            exports.default = Recorder;
-	        }, { "inline-worker": 3 }], 3: [function (require, module, exports) {
-	            "use strict";
-
-	            module.exports = require("./inline-worker");
-	        }, { "./inline-worker": 4 }], 4: [function (require, module, exports) {
-	            (function (global) {
-	                "use strict";
-
-	                var _createClass = function () {
-	                    function defineProperties(target, props) {
-	                        for (var key in props) {
-	                            var prop = props[key];prop.configurable = true;if (prop.value) prop.writable = true;
-	                        }Object.defineProperties(target, props);
-	                    }return function (Constructor, protoProps, staticProps) {
-	                        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
-	                    };
-	                }();
-
-	                var _classCallCheck = function _classCallCheck(instance, Constructor) {
-	                    if (!(instance instanceof Constructor)) {
-	                        throw new TypeError("Cannot call a class as a function");
-	                    }
-	                };
-
-	                var WORKER_ENABLED = !!(global === global.window && global.URL && global.Blob && global.Worker);
-
-	                var InlineWorker = function () {
-	                    function InlineWorker(func, self) {
-	                        var _this = this;
-
-	                        _classCallCheck(this, InlineWorker);
-
-	                        if (WORKER_ENABLED) {
-	                            var functionBody = func.toString().trim().match(/^function\s*\w*\s*\([\w\s,]*\)\s*{([\w\W]*?)}$/)[1];
-	                            var url = global.URL.createObjectURL(new global.Blob([functionBody], { type: "text/javascript" }));
-
-	                            return new global.Worker(url);
-	                        }
-
-	                        this.self = self;
-	                        this.self.postMessage = function (data) {
-	                            setTimeout(function () {
-	                                _this.onmessage({ data: data });
-	                            }, 0);
-	                        };
-
-	                        setTimeout(function () {
-	                            func.call(self);
-	                        }, 0);
-	                    }
-
-	                    _createClass(InlineWorker, {
-	                        postMessage: {
-	                            value: function postMessage(data) {
-	                                var _this = this;
-
-	                                setTimeout(function () {
-	                                    _this.self.onmessage({ data: data });
-	                                }, 0);
-	                            }
-	                        }
-	                    });
-
-	                    return InlineWorker;
-	                }();
-
-	                module.exports = InlineWorker;
-	            }).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
-	        }, {}] }, {}, [1])(1);
-	});
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
-
-/***/ },
-/* 58 */
-/***/ function(module, exports, __webpack_require__) {
-
 	/**
 	 * interact.js v1.2.6
 	 *
@@ -15201,6 +14650,600 @@
 
 	} (typeof window === 'undefined'? undefined : window));
 
+
+/***/ },
+/* 57 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var _helpers = __webpack_require__(3);
+
+	var _helpers2 = _interopRequireDefault(_helpers);
+
+	var _recorder = __webpack_require__(58);
+
+	var _recorder2 = _interopRequireDefault(_recorder);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function AudioHandler(filenames) {
+		var AudioContext = window.AudioContext || window.webkitAudioContext;
+
+		filenames = _helpers2.default.uniques(filenames);
+
+		this.filenames = [];
+		this.sounds = [];
+		this.context = new AudioContext();
+		this.loadSounds(filenames);
+		this.playedDummySound = false; //	hack to make audio work in iOS
+	}
+
+	AudioHandler.prototype = {
+
+		constructor: AudioHandler,
+
+		loadSounds: function loadSounds(files) {
+			var _this = this;
+
+			files.map(function (file) {
+				_this.loadSound(file);
+				_this.filenames.push(file);
+			});
+		},
+
+		loadSound: function loadSound(filename) {
+			var _this2 = this;
+
+			if (this.filenames.indexOf(filename) !== -1) return;
+
+			var request = new XMLHttpRequest(),
+			    fullfile = '/sequencer/sounds/' + filename;
+
+			request.open('GET', fullfile);
+			request.responseType = 'arraybuffer';
+
+			request.onload = function () {
+				_this2.context.decodeAudioData(request.response, function (buffer) {
+					_this2.sounds.push(buffer);
+				});
+			};
+
+			request.send();
+		},
+
+		playSound: function playSound(id) {
+			var source = this.context.createBufferSource(),
+			    index = this.filenames.indexOf(id);
+
+			source.buffer = this.sounds[index];
+			source.connect(this.context.destination);
+			source.start(0);
+		},
+
+		playDummySound: function playDummySound() {
+			if (this.playedDummySound) return;
+
+			var buffer = this.context.createBuffer(1, 1, 22050),
+			    source = this.context.createBufferSource();
+
+			source.buffer = buffer;
+			source.connect(this.context.destination);
+			source.start(0);
+
+			this.playedDummySound = true;
+
+			console.log('played dummy sound');
+		},
+
+		recordAudio: function recordAudio(gainAmt) {
+			var _this3 = this;
+
+			if (gainAmt == null) gainAmt = 10;
+
+			var id = Math.random().toString(36).substring(7); //	generate random id
+
+			navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+				console.log('got stream');
+
+				var mediaStreamSource = _this3.context.createMediaStreamSource(stream);
+				var gainNode = _this3.context.createGain();
+				gainNode.gain.value = gainAmt;
+				// mediaStreamSource.connect(this.context.destination)
+				mediaStreamSource.connect(gainNode);
+				gainNode.connect(_this3.context.destination);
+
+				var recorder = new _recorder2.default(gainNode);
+
+				_this3.recorder = recorder;
+				_this3.recorder.record();
+
+				setTimeout(function () {
+					stream.getAudioTracks()[0].stop();
+					_this3.recorder.getBuffer(function (buffer) {
+						buffer[0] = Array.prototype.slice.call(buffer[0], 30000);
+						var bufferStore = _this3.context.createBuffer(1, buffer[0].length, _this3.context.sampleRate);
+						bufferStore.getChannelData(0).set(buffer[0]);
+						_this3.sounds.push(bufferStore);
+						_this3.filenames.push(id);
+						// this.uploadAudio(id)
+						console.log('stored sounds are', _this3.sounds.length);
+						console.log('stored files are', _this3.filenames);
+					});
+				}, 1000);
+			});
+
+			return id;
+		},
+
+		getSoundByFilename: function getSoundByFilename(filename) {
+			var index = this.filenames.indexOf(filename);
+
+			if (index === -1) return -1;
+
+			return this.sounds[index];
+		},
+
+		removeSound: function removeSound(id) {
+			//	NOTE 
+			// return
+
+			var index = this.filenames.indexOf(id);
+			this.sounds.splice(index, 1);
+			this.filenames.splice(index, 1);
+			console.log('stored sounds are now', this.sounds);
+			console.log('stored files are now', this.filenames);
+		},
+
+		canRecord: function canRecord() {
+			var _this4 = this;
+
+			try {
+				var _ret = function () {
+					var id = _this4.recordAudio(.1); //	record with gain of .1
+					setTimeout(function () {
+						return _this4.removeSound(id);
+					}, 1500);
+					return {
+						v: true
+					};
+				}();
+
+				if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+			} catch (err) {
+				return false;
+			}
+		},
+
+		uploadAudio: function uploadAudio(filename) {
+			var upload = new XMLHttpRequest(),
+			    fullfile = '/sequencer/save/' + filename,
+			    sound = this.getSoundByFilename(filename);
+
+			if (sound === -1) throw 'Could not find sound' + filename;
+
+			var blob = new Blob(sound, { type: 'audio/wav' });
+
+			// debugger;
+
+			upload.open('POST', fullfile, true);
+			upload.send(blob);
+		}
+	};
+
+	exports.default = AudioHandler;
+
+/***/ },
+/* 58 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var require;var require;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	(function (f) {
+	    if (( false ? "undefined" : _typeof(exports)) === "object" && typeof module !== "undefined") {
+	        module.exports = f();
+	    } else if (true) {
+	        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (f), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    } else {
+	        var g;if (typeof window !== "undefined") {
+	            g = window;
+	        } else if (typeof global !== "undefined") {
+	            g = global;
+	        } else if (typeof self !== "undefined") {
+	            g = self;
+	        } else {
+	            g = this;
+	        }g.Recorder = f();
+	    }
+	})(function () {
+	    var define, module, exports;return function e(t, n, r) {
+	        function s(o, u) {
+	            if (!n[o]) {
+	                if (!t[o]) {
+	                    var a = typeof require == "function" && require;if (!u && a) return require(o, !0);if (i) return i(o, !0);var f = new Error("Cannot find module '" + o + "'");throw f.code = "MODULE_NOT_FOUND", f;
+	                }var l = n[o] = { exports: {} };t[o][0].call(l.exports, function (e) {
+	                    var n = t[o][1][e];return s(n ? n : e);
+	                }, l, l.exports, e, t, n, r);
+	            }return n[o].exports;
+	        }var i = typeof require == "function" && require;for (var o = 0; o < r.length; o++) {
+	            s(r[o]);
+	        }return s;
+	    }({ 1: [function (require, module, exports) {
+	            "use strict";
+
+	            module.exports = require("./recorder").Recorder;
+	        }, { "./recorder": 2 }], 2: [function (require, module, exports) {
+	            'use strict';
+
+	            var _createClass = function () {
+	                function defineProperties(target, props) {
+	                    for (var i = 0; i < props.length; i++) {
+	                        var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+	                    }
+	                }return function (Constructor, protoProps, staticProps) {
+	                    if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+	                };
+	            }();
+
+	            Object.defineProperty(exports, "__esModule", {
+	                value: true
+	            });
+	            exports.Recorder = undefined;
+
+	            var _inlineWorker = require('inline-worker');
+
+	            var _inlineWorker2 = _interopRequireDefault(_inlineWorker);
+
+	            function _interopRequireDefault(obj) {
+	                return obj && obj.__esModule ? obj : { default: obj };
+	            }
+
+	            function _classCallCheck(instance, Constructor) {
+	                if (!(instance instanceof Constructor)) {
+	                    throw new TypeError("Cannot call a class as a function");
+	                }
+	            }
+
+	            var Recorder = exports.Recorder = function () {
+	                function Recorder(source, cfg) {
+	                    var _this = this;
+
+	                    _classCallCheck(this, Recorder);
+
+	                    this.config = {
+	                        bufferLen: 4096,
+	                        numChannels: 2,
+	                        mimeType: 'audio/wav'
+	                    };
+	                    this.recording = false;
+	                    this.callbacks = {
+	                        getBuffer: [],
+	                        exportWAV: []
+	                    };
+
+	                    Object.assign(this.config, cfg);
+	                    this.context = source.context;
+	                    this.node = (this.context.createScriptProcessor || this.context.createJavaScriptNode).call(this.context, this.config.bufferLen, this.config.numChannels, this.config.numChannels);
+
+	                    this.node.onaudioprocess = function (e) {
+	                        if (!_this.recording) return;
+
+	                        var buffer = [];
+	                        for (var channel = 0; channel < _this.config.numChannels; channel++) {
+	                            buffer.push(e.inputBuffer.getChannelData(channel));
+	                        }
+	                        _this.worker.postMessage({
+	                            command: 'record',
+	                            buffer: buffer
+	                        });
+	                    };
+
+	                    source.connect(this.node);
+	                    this.node.connect(this.context.destination); //this should not be necessary
+
+	                    var self = {};
+	                    this.worker = new _inlineWorker2.default(function () {
+	                        var recLength = 0,
+	                            recBuffers = [],
+	                            sampleRate = undefined,
+	                            numChannels = undefined;
+
+	                        self.onmessage = function (e) {
+	                            switch (e.data.command) {
+	                                case 'init':
+	                                    init(e.data.config);
+	                                    break;
+	                                case 'record':
+	                                    record(e.data.buffer);
+	                                    break;
+	                                case 'exportWAV':
+	                                    exportWAV(e.data.type);
+	                                    break;
+	                                case 'getBuffer':
+	                                    getBuffer();
+	                                    break;
+	                                case 'clear':
+	                                    clear();
+	                                    break;
+	                            }
+	                        };
+
+	                        function init(config) {
+	                            sampleRate = config.sampleRate;
+	                            numChannels = config.numChannels;
+	                            initBuffers();
+	                        }
+
+	                        function record(inputBuffer) {
+	                            for (var channel = 0; channel < numChannels; channel++) {
+	                                recBuffers[channel].push(inputBuffer[channel]);
+	                            }
+	                            recLength += inputBuffer[0].length;
+	                        }
+
+	                        function exportWAV(type) {
+	                            var buffers = [];
+	                            for (var channel = 0; channel < numChannels; channel++) {
+	                                buffers.push(mergeBuffers(recBuffers[channel], recLength));
+	                            }
+	                            var interleaved = undefined;
+	                            if (numChannels === 2) {
+	                                interleaved = interleave(buffers[0], buffers[1]);
+	                            } else {
+	                                interleaved = buffers[0];
+	                            }
+	                            var dataview = encodeWAV(interleaved);
+	                            var audioBlob = new Blob([dataview], { type: type });
+
+	                            self.postMessage({ command: 'exportWAV', data: audioBlob });
+	                        }
+
+	                        function getBuffer() {
+	                            var buffers = [];
+	                            for (var channel = 0; channel < numChannels; channel++) {
+	                                buffers.push(mergeBuffers(recBuffers[channel], recLength));
+	                            }
+	                            self.postMessage({ command: 'getBuffer', data: buffers });
+	                        }
+
+	                        function clear() {
+	                            recLength = 0;
+	                            recBuffers = [];
+	                            initBuffers();
+	                        }
+
+	                        function initBuffers() {
+	                            for (var channel = 0; channel < numChannels; channel++) {
+	                                recBuffers[channel] = [];
+	                            }
+	                        }
+
+	                        function mergeBuffers(recBuffers, recLength) {
+	                            var result = new Float32Array(recLength);
+	                            var offset = 0;
+	                            for (var i = 0; i < recBuffers.length; i++) {
+	                                result.set(recBuffers[i], offset);
+	                                offset += recBuffers[i].length;
+	                            }
+	                            return result;
+	                        }
+
+	                        function interleave(inputL, inputR) {
+	                            var length = inputL.length + inputR.length;
+	                            var result = new Float32Array(length);
+
+	                            var index = 0,
+	                                inputIndex = 0;
+
+	                            while (index < length) {
+	                                result[index++] = inputL[inputIndex];
+	                                result[index++] = inputR[inputIndex];
+	                                inputIndex++;
+	                            }
+	                            return result;
+	                        }
+
+	                        function floatTo16BitPCM(output, offset, input) {
+	                            for (var i = 0; i < input.length; i++, offset += 2) {
+	                                var s = Math.max(-1, Math.min(1, input[i]));
+	                                output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+	                            }
+	                        }
+
+	                        function writeString(view, offset, string) {
+	                            for (var i = 0; i < string.length; i++) {
+	                                view.setUint8(offset + i, string.charCodeAt(i));
+	                            }
+	                        }
+
+	                        function encodeWAV(samples) {
+	                            var buffer = new ArrayBuffer(44 + samples.length * 2);
+	                            var view = new DataView(buffer);
+
+	                            /* RIFF identifier */
+	                            writeString(view, 0, 'RIFF');
+	                            /* RIFF chunk length */
+	                            view.setUint32(4, 36 + samples.length * 2, true);
+	                            /* RIFF type */
+	                            writeString(view, 8, 'WAVE');
+	                            /* format chunk identifier */
+	                            writeString(view, 12, 'fmt ');
+	                            /* format chunk length */
+	                            view.setUint32(16, 16, true);
+	                            /* sample format (raw) */
+	                            view.setUint16(20, 1, true);
+	                            /* channel count */
+	                            view.setUint16(22, numChannels, true);
+	                            /* sample rate */
+	                            view.setUint32(24, sampleRate, true);
+	                            /* byte rate (sample rate * block align) */
+	                            view.setUint32(28, sampleRate * 4, true);
+	                            /* block align (channel count * bytes per sample) */
+	                            view.setUint16(32, numChannels * 2, true);
+	                            /* bits per sample */
+	                            view.setUint16(34, 16, true);
+	                            /* data chunk identifier */
+	                            writeString(view, 36, 'data');
+	                            /* data chunk length */
+	                            view.setUint32(40, samples.length * 2, true);
+
+	                            floatTo16BitPCM(view, 44, samples);
+
+	                            return view;
+	                        }
+	                    }, self);
+
+	                    this.worker.postMessage({
+	                        command: 'init',
+	                        config: {
+	                            sampleRate: this.context.sampleRate,
+	                            numChannels: this.config.numChannels
+	                        }
+	                    });
+
+	                    this.worker.onmessage = function (e) {
+	                        var cb = _this.callbacks[e.data.command].pop();
+	                        if (typeof cb == 'function') {
+	                            cb(e.data.data);
+	                        }
+	                    };
+	                }
+
+	                _createClass(Recorder, [{
+	                    key: 'record',
+	                    value: function record() {
+	                        this.recording = true;
+	                    }
+	                }, {
+	                    key: 'stop',
+	                    value: function stop() {
+	                        this.recording = false;
+	                    }
+	                }, {
+	                    key: 'clear',
+	                    value: function clear() {
+	                        this.worker.postMessage({ command: 'clear' });
+	                    }
+	                }, {
+	                    key: 'getBuffer',
+	                    value: function getBuffer(cb) {
+	                        cb = cb || this.config.callback;
+	                        if (!cb) throw new Error('Callback not set');
+
+	                        this.callbacks.getBuffer.push(cb);
+
+	                        this.worker.postMessage({ command: 'getBuffer' });
+	                    }
+	                }, {
+	                    key: 'exportWAV',
+	                    value: function exportWAV(cb, mimeType) {
+	                        mimeType = mimeType || this.config.mimeType;
+	                        cb = cb || this.config.callback;
+	                        if (!cb) throw new Error('Callback not set');
+
+	                        this.callbacks.exportWAV.push(cb);
+
+	                        this.worker.postMessage({
+	                            command: 'exportWAV',
+	                            type: mimeType
+	                        });
+	                    }
+	                }], [{
+	                    key: 'forceDownload',
+	                    value: function forceDownload(blob, filename) {
+	                        var url = (window.URL || window.webkitURL).createObjectURL(blob);
+	                        var link = window.document.createElement('a');
+	                        link.href = url;
+	                        link.download = filename || 'output.wav';
+	                        var click = document.createEvent("Event");
+	                        click.initEvent("click", true, true);
+	                        link.dispatchEvent(click);
+	                    }
+	                }]);
+
+	                return Recorder;
+	            }();
+
+	            exports.default = Recorder;
+	        }, { "inline-worker": 3 }], 3: [function (require, module, exports) {
+	            "use strict";
+
+	            module.exports = require("./inline-worker");
+	        }, { "./inline-worker": 4 }], 4: [function (require, module, exports) {
+	            (function (global) {
+	                "use strict";
+
+	                var _createClass = function () {
+	                    function defineProperties(target, props) {
+	                        for (var key in props) {
+	                            var prop = props[key];prop.configurable = true;if (prop.value) prop.writable = true;
+	                        }Object.defineProperties(target, props);
+	                    }return function (Constructor, protoProps, staticProps) {
+	                        if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+	                    };
+	                }();
+
+	                var _classCallCheck = function _classCallCheck(instance, Constructor) {
+	                    if (!(instance instanceof Constructor)) {
+	                        throw new TypeError("Cannot call a class as a function");
+	                    }
+	                };
+
+	                var WORKER_ENABLED = !!(global === global.window && global.URL && global.Blob && global.Worker);
+
+	                var InlineWorker = function () {
+	                    function InlineWorker(func, self) {
+	                        var _this = this;
+
+	                        _classCallCheck(this, InlineWorker);
+
+	                        if (WORKER_ENABLED) {
+	                            var functionBody = func.toString().trim().match(/^function\s*\w*\s*\([\w\s,]*\)\s*{([\w\W]*?)}$/)[1];
+	                            var url = global.URL.createObjectURL(new global.Blob([functionBody], { type: "text/javascript" }));
+
+	                            return new global.Worker(url);
+	                        }
+
+	                        this.self = self;
+	                        this.self.postMessage = function (data) {
+	                            setTimeout(function () {
+	                                _this.onmessage({ data: data });
+	                            }, 0);
+	                        };
+
+	                        setTimeout(function () {
+	                            func.call(self);
+	                        }, 0);
+	                    }
+
+	                    _createClass(InlineWorker, {
+	                        postMessage: {
+	                            value: function postMessage(data) {
+	                                var _this = this;
+
+	                                setTimeout(function () {
+	                                    _this.self.onmessage({ data: data });
+	                                }, 0);
+	                            }
+	                        }
+	                    });
+
+	                    return InlineWorker;
+	                }();
+
+	                module.exports = InlineWorker;
+	            }).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
+	        }, {}] }, {}, [1])(1);
+	});
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }
 /******/ ]);

@@ -1,7 +1,7 @@
 import Helpers from './helpers.js'
 import SoundBites from './soundbites.js'
 import SocketHandler from './sockethandler.js'
-import AudioHandler from './audiohandler.js'
+// import AudioHandler from './audiohandler.js'
 const interact = require('interact.js')
 const tween = require('../../node_modules/gsap/src/minified/TweenMax.min.js')
 
@@ -11,6 +11,7 @@ function Grid(dimensions) {
 	this.socketHandler = new SocketHandler(this)
 
 	this.maxNSounds = (dimensions.rows * dimensions.cols) - 1
+	this.maxNSounds = 30
 
 	this.canvas = ( () => {
 		let canvas = document.createElement('canvas')
@@ -149,6 +150,7 @@ Grid.prototype = {
 
 		this.cells[index].containedSound = null
 		this.cells[index].isEmpty = true
+		el.bite.isDocked = false
 	},
 
 	dock: function(el,props) {
@@ -179,7 +181,11 @@ Grid.prototype = {
 		el.bite.isDocked = true
 		el.bite.cellIndex = index
 
-		this.sounds.setPosition(el,closest)
+		this.sounds.setPosition(el, closest, true)
+
+		// have circle animation play
+
+		setTimeout( () => { this.sounds.animateElementPopIn(el) }, 25)
 
 		// don't emit if the emitter source is the current client
 
@@ -228,7 +234,6 @@ Grid.prototype = {
 	// configure handling of element pickup and release from grid
 
 	handleElements: function(bites) {
-		// let bites = this.sounds.bites,
 		let ctx = this
 
 		const elementPickup = (e) => {
@@ -237,6 +242,7 @@ Grid.prototype = {
 			e.target.bite.beganWithMouseDown = true
 			e.target.bite.isSelected = true
 			ctx.sounds.sendToBackground(ctx.sounds.bites)
+			console.log('target is', e.target)
 			ctx.sounds.bringToForeground([e.target])
 			ctx.sounds.setSelectedStyle(e.target)
 			ctx.undock(e.target)
