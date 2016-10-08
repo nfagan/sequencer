@@ -288,7 +288,10 @@ Sequencer.prototype = {
 
 	recordAudio: function() {
 
-		let wasPlaying = this.isPlaying
+		let wasPlaying = this.isPlaying,
+			wasPublic = this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE
+
+		this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = false
 		this.pause()
 
 		let id = this.audio.recordAudio()
@@ -298,6 +301,7 @@ Sequencer.prototype = {
 			this.grid.sounds.animateElementPopIn(this.grid.sounds.bites[this.grid.sounds.bites.length-1])
 
 			if (wasPlaying) this.loop();
+			if (wasPublic) this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = true;
 
 		},2000)
 	},

@@ -393,7 +393,10 @@
 		recordAudio: function recordAudio() {
 			var _this10 = this;
 
-			var wasPlaying = this.isPlaying;
+			var wasPlaying = this.isPlaying,
+			    wasPublic = this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE;
+
+			this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = false;
 			this.pause();
 
 			var id = this.audio.recordAudio();
@@ -403,6 +406,7 @@
 				_this10.grid.sounds.animateElementPopIn(_this10.grid.sounds.bites[_this10.grid.sounds.bites.length - 1]);
 
 				if (wasPlaying) _this10.loop();
+				if (wasPublic) _this10.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = true;
 			}, 2000);
 		},
 
