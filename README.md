@@ -8,3 +8,7 @@ If using Chrome, in 'sequencer.js', you can set recordingEnabled = true and use 
 This feature isn't stable and is disabled by default.
 
 It's a work in progress -- kindly let me know of any bugs you find :)
+
+--
+
+Live demo @ https://musicmaker.herokuapp.com/sequencer
