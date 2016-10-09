@@ -42,11 +42,13 @@ AudioHandler.prototype = {
 		request.send()
 	},
 
-	playSound: function(id) {
+	playSound: function(id, semitone) {
 		let source = this.context.createBufferSource(),
 			index = this.filenames.indexOf(id)
 
-		source.playbackRate.value = Math.pow(2, 1/12)
+		if (semitone == null) semitone = 0;
+
+		source.playbackRate.value = Math.pow(2, semitone/12)
 
 		source.buffer = this.sounds[index]
 		source.connect(this.context.destination)

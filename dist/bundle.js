@@ -105,7 +105,8 @@
 		this.loopId = null;
 		this.iteration = 0;
 		this.isPlaying = false;
-		this.recordingEnabled = false;
+		this.recordingEnabled = true;
+		this.semitone = 0;
 
 		this.testAbilityToRecord();
 		this.createControls();
@@ -136,7 +137,7 @@
 
 				if (cells.length > 0) {
 					for (var i = 0; i < cells.length; i++) {
-						_this.audio.playSound(cells[i].containedSound.bite.filename);
+						_this.audio.playSound(cells[i].containedSound.bite.filename, _this.semitone);
 						_this.grid.sounds.animateElementPlaying(cells[i].containedSound);
 					}
 				}
@@ -183,6 +184,15 @@
 			this.loop();
 		},
 
+		changePitch: function changePitch(amt) {
+			var semitone = this.semitone,
+			    newPitch = semitone + amt;
+
+			if (newPitch < -5 || newPitch > 5) return;
+
+			this.semitone = newPitch;
+		},
+
 		createControls: function createControls() {
 
 			var directionAndPublicControls = {
@@ -192,12 +202,17 @@
 				controlText: ['&#9995;', '&#128080;', '&#128075;']
 			};
 
-			var controlIds = ['minus', 'plus'],
-			    controlText = ['&#9876;', '&#9935;'];
+			var controlIds = ['minus', 'plus', 'pitchUp', 'pitchDown'],
+			    controlText = ['&#9876;', '&#9935;', '&#127939;', '&#128694;'];
 
 			if (this.recordingEnabled) {
-				controlIds = ['minus', 'record', 'plus'];
-				controlText = ['&#9876;', '&#128519;', '&#9935;'];
+				// controlIds = ['minus','record','plus']
+				// controlText = ['&#9876;','&#128519;','&#9935;']
+				controlIds.splice(2, 0, 'record');
+				// controlText.push('&#128519;')
+				controlText.splice(2, 0, '&#128519;');
+				controlIds.join();
+				controlText.join();
 			}
 
 			var bpmControls = {
@@ -315,17 +330,37 @@
 			});
 		},
 
-		handleResize: function handleResize() {
+		handlePitchUpButton: function handlePitchUpButton() {
 			var _this7 = this;
 
+			var button = document.querySelector('#pitchUp');
+			button.addEventListener('click', function () {
+				_this7.changePitch(1);
+				_this7.addSelectedClass(button);
+			});
+		},
+
+		handlePitchDownButton: function handlePitchDownButton() {
+			var _this8 = this;
+
+			var button = document.querySelector('#pitchDown');
+			button.addEventListener('click', function () {
+				_this8.changePitch(-1);
+				_this8.addSelectedClass(button);
+			});
+		},
+
+		handleResize: function handleResize() {
+			var _this9 = this;
+
 			window.addEventListener('resize', function () {
-				_this7.grid.reposition();
-				_this7.positionControls();
+				_this9.grid.reposition();
+				_this9.positionControls();
 			});
 		},
 
 		handleRecordButton: function handleRecordButton() {
-			var _this8 = this;
+			var _this10 = this;
 
 			if (!this.recordingEnabled) return;
 
@@ -348,7 +383,7 @@
 				});
 				document.body.appendChild(backdrop);
 
-				_this8.recordAudio();
+				_this10.recordAudio();
 
 				setTimeout(function () {
 					document.body.removeChild(backdrop);
@@ -362,7 +397,7 @@
 		},
 
 		setupEventListeners: function setupEventListeners() {
-			var _this9 = this;
+			var _this11 = this;
 
 			this.handleResize();
 			this.handlePlayButton();
@@ -370,10 +405,12 @@
 			this.handleBPMIncreaseButton();
 			this.handlBPMDecreaseButton();
 			this.handlePrivateButton();
+			this.handlePitchUpButton();
+			this.handlePitchDownButton();
 
 			if (this.recordingEnabled) {
 				setTimeout(function () {
-					_this9.handleRecordButton();
+					_this11.handleRecordButton();
 				}, 2500);
 			}
 		},
@@ -394,7 +431,7 @@
 		},
 
 		recordAudio: function recordAudio() {
-			var _this10 = this;
+			var _this12 = this;
 
 			var wasPlaying = this.isPlaying,
 			    wasPublic = this.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE;
@@ -404,12 +441,12 @@
 
 			var id = this.audio.recordAudio();
 			setTimeout(function () {
-				_this10.grid.sounds.createRandomizedBite(id);
-				_this10.grid.handleElements([_this10.grid.sounds.bites[_this10.grid.sounds.bites.length - 1]]);
-				_this10.grid.sounds.animateElementPopIn(_this10.grid.sounds.bites[_this10.grid.sounds.bites.length - 1]);
+				_this12.grid.sounds.createRandomizedBite(id);
+				_this12.grid.handleElements([_this12.grid.sounds.bites[_this12.grid.sounds.bites.length - 1]]);
+				_this12.grid.sounds.animateElementPopIn(_this12.grid.sounds.bites[_this12.grid.sounds.bites.length - 1]);
 
-				if (wasPlaying) _this10.loop();
-				if (wasPublic) _this10.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = true;
+				if (wasPlaying) _this12.loop();
+				if (wasPublic) _this12.grid.socketHandler.ALLOW_PUBLIC_OVERRIDE = true;
 			}, 2000);
 		},
 
@@ -14730,11 +14767,13 @@
 			request.send();
 		},
 
-		playSound: function playSound(id) {
+		playSound: function playSound(id, semitone) {
 			var source = this.context.createBufferSource(),
 			    index = this.filenames.indexOf(id);
 
-			source.playbackRate.value = Math.pow(2, 1 / 12);
+			if (semitone == null) semitone = 0;
+
+			source.playbackRate.value = Math.pow(2, semitone / 12);
 
 			source.buffer = this.sounds[index];
 			source.connect(this.context.destination);

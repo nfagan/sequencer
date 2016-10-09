@@ -25,7 +25,8 @@ function Sequencer() {
 	this.loopId = null
 	this.iteration = 0
 	this.isPlaying = false
-	this.recordingEnabled = false
+	this.recordingEnabled = true
+	this.semitone = 0
 
 	this.testAbilityToRecord()
 	this.createControls()
@@ -54,7 +55,7 @@ Sequencer.prototype = {
 
 			if (cells.length > 0) {
 				for (let i=0;i<cells.length;i++) {
-					this.audio.playSound(cells[i].containedSound.bite.filename)
+					this.audio.playSound(cells[i].containedSound.bite.filename, this.semitone)
 					this.grid.sounds.animateElementPlaying(cells[i].containedSound)
 				}
 			}
@@ -102,6 +103,15 @@ Sequencer.prototype = {
 		this.loop()
 	},
 
+	changePitch: function(amt) {
+		let semitone = this.semitone,
+			newPitch = semitone + amt
+
+		if ((newPitch < -5) || (newPitch > 5)) return;
+
+		this.semitone = newPitch
+	},
+
 	createControls: function() {
 
 		let directionAndPublicControls = {
@@ -111,12 +121,17 @@ Sequencer.prototype = {
 			controlText : ['&#9995;','&#128080;','&#128075;']
 		}
 
-		let controlIds = ['minus','plus'],
-			controlText = ['&#9876;','&#9935;']
+		let controlIds = ['minus','plus','pitchUp','pitchDown'],
+			controlText = ['&#9876;','&#9935;','&#127939;','&#128694;']
 
 		if (this.recordingEnabled) {
-			controlIds = ['minus','record','plus']
-			controlText = ['&#9876;','&#128519;','&#9935;']
+			// controlIds = ['minus','record','plus']
+			// controlText = ['&#9876;','&#128519;','&#9935;']
+			controlIds.splice(2, 0, 'record')
+			// controlText.push('&#128519;')
+			controlText.splice(2, 0, '&#128519;')
+			controlIds.join()
+			controlText.join()
 		}
 
 		let bpmControls = {
@@ -222,6 +237,22 @@ Sequencer.prototype = {
 		})
 	},
 
+	handlePitchUpButton: function() {
+		let button = document.querySelector('#pitchUp')
+		button.addEventListener('click', () => {
+			this.changePitch(1)
+			this.addSelectedClass(button)
+		})
+	},
+
+	handlePitchDownButton: function() {
+		let button = document.querySelector('#pitchDown')
+		button.addEventListener('click', () => {
+			this.changePitch(-1)
+			this.addSelectedClass(button)
+		})
+	},
+
 	handleResize: function() { 
 		window.addEventListener('resize', () => {
 			this.grid.reposition() 
@@ -272,6 +303,8 @@ Sequencer.prototype = {
 		this.handleBPMIncreaseButton()
 		this.handlBPMDecreaseButton()
 		this.handlePrivateButton()
+		this.handlePitchUpButton()
+		this.handlePitchDownButton()
 
 		if (this.recordingEnabled) {
 			setTimeout( () => { this.handleRecordButton() }, 2500)
