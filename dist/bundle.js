@@ -14734,6 +14734,8 @@
 			var source = this.context.createBufferSource(),
 			    index = this.filenames.indexOf(id);
 
+			source.playbackRate.value = Math.pow(2, 1 / 12);
+
 			source.buffer = this.sounds[index];
 			source.connect(this.context.destination);
 			source.start(0);
