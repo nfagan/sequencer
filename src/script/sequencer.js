@@ -25,7 +25,7 @@ function Sequencer() {
 	this.loopId = null
 	this.iteration = 0
 	this.isPlaying = false
-	this.recordingEnabled = true
+	this.recordingEnabled = false
 
 	this.testAbilityToRecord()
 	this.createControls()
@@ -272,7 +272,10 @@ Sequencer.prototype = {
 		this.handleBPMIncreaseButton()
 		this.handlBPMDecreaseButton()
 		this.handlePrivateButton()
-		setTimeout( () => { this.handleRecordButton() }, 2500)
+
+		if (this.recordingEnabled) {
+			setTimeout( () => { this.handleRecordButton() }, 2500)
+		} 
 	},
 
 	addSelectedClass: function(el) {
@@ -317,6 +320,7 @@ Sequencer.prototype = {
 	},
 
 	testAbilityToRecord: function() {
+		if (!this.recordingEnabled) return;
 		if (!this.audio.canRecord()) this.recordingEnabled = false;
 	}
 

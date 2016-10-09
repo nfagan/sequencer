@@ -105,7 +105,7 @@
 		this.loopId = null;
 		this.iteration = 0;
 		this.isPlaying = false;
-		this.recordingEnabled = true;
+		this.recordingEnabled = false;
 
 		this.testAbilityToRecord();
 		this.createControls();
@@ -370,9 +370,12 @@
 			this.handleBPMIncreaseButton();
 			this.handlBPMDecreaseButton();
 			this.handlePrivateButton();
-			setTimeout(function () {
-				_this9.handleRecordButton();
-			}, 2500);
+
+			if (this.recordingEnabled) {
+				setTimeout(function () {
+					_this9.handleRecordButton();
+				}, 2500);
+			}
 		},
 
 		addSelectedClass: function addSelectedClass(el) {
@@ -421,6 +424,7 @@
 		},
 
 		testAbilityToRecord: function testAbilityToRecord() {
+			if (!this.recordingEnabled) return;
 			if (!this.audio.canRecord()) this.recordingEnabled = false;
 		}
 
@@ -14851,7 +14855,7 @@
 /* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var require;var require;var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var require;var require;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
