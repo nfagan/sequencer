@@ -76,11 +76,16 @@ SocketHandler.prototype = {
 
 		if (element.bite.isSelected) return;
 
-		this.grid.undock(element)		//	if already undocked, will not do anything
+		if (element.bite.isDocked) this.grid.undock(element);
 
 		let newPosition = this.grid.getCell(sound)
 
-		Helpers.setStyle(element, {top: Helpers.toPixels(newPosition.top), left: Helpers.toPixels(newPosition.left) })
+		Helpers.setStyle(element, 
+			{
+				top: Helpers.toPixels(newPosition.top),
+				left: Helpers.toPixels(newPosition.left),
+				transform: 'none'
+			})
 		// this.grid.sounds.animateElementPopIn(element)	//	animate the popin
 		this.grid.dock(element, { emit: false }) 	// do not emit the event
 	}

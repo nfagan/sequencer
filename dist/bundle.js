@@ -1226,11 +1226,15 @@
 
 			if (element.bite.isSelected) return;
 
-			this.grid.undock(element); //	if already undocked, will not do anything
+			if (element.bite.isDocked) this.grid.undock(element);
 
 			var newPosition = this.grid.getCell(sound);
 
-			_helpers2.default.setStyle(element, { top: _helpers2.default.toPixels(newPosition.top), left: _helpers2.default.toPixels(newPosition.left) });
+			_helpers2.default.setStyle(element, {
+				top: _helpers2.default.toPixels(newPosition.top),
+				left: _helpers2.default.toPixels(newPosition.left),
+				transform: 'none'
+			});
 			// this.grid.sounds.animateElementPopIn(element)	//	animate the popin
 			this.grid.dock(element, { emit: false }); // do not emit the event
 		}
@@ -14847,7 +14851,7 @@
 /* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;var require;var require;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	var require;var require;var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
