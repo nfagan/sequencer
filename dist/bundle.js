@@ -105,7 +105,7 @@
 		this.loopId = null;
 		this.iteration = 0;
 		this.isPlaying = false;
-		this.recordingEnabled = true;
+		this.recordingEnabled = false;
 		this.semitone = 0;
 
 		this.testAbilityToRecord();
